@@ -1,0 +1,44 @@
+{
+  "name": "groovy-vscode-client",
+  "version": "0.1.0",
+  "description": "VSCode Extension for Groovy Language Support",
+  "publisher": "groovy-language-support",
+  "displayName": "Groovy Language Support",
+  "categories": ["Programming Languages"],
+  "keywords": ["groovy", "language-server"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": ["onLanguage:groovy"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "groovy",
+        "aliases": ["Groovy", "groovy"],
+        "extensions": [".groovy", ".gvy", ".gy", ".gsh"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "groovy",
+        "scopeName": "source.groovy",
+        "path": "./syntaxes/groovy.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
