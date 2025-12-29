@@ -416,6 +416,7 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
   for (const workspaceFolder of workspaceFolders) {
     const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
     if (fs.existsSync(varsDir)) {
+      connection.console.log(`Searching for function ${symbol} in vars directory: ${varsDir}`);
       try {
         const files = fs.readdirSync(varsDir);
         for (const file of files) {
@@ -433,11 +434,13 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
       }
     }
 
-    // Search in src/ directory for classes
+    // Search in src/ directory for classes and their methods
     const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
     if (fs.existsSync(srcDir)) {
-      const location = findClassDefinitionInSrc(srcDir, symbol);
+      connection.console.log(`Searching for class or method ${symbol} in src directory: ${srcDir}`);
+      const location = findClassOrMethodDefinitionInSrc(srcDir, symbol);
       if (location) {
+        connection.console.log(`Found location: ${location}`);
         return location;
       }
     }
@@ -468,8 +471,8 @@ function findFunctionDefinitionInFile(filePath: string, content: string, symbol:
   return null;
 }
 
-function findClassDefinitionInSrc(srcDir: string, symbol: string): Location | null {
-  // Recursively search for class definition in src directory
+function findClassOrMethodDefinitionInSrc(srcDir: string, symbol: string): Location | null {
+  // Recursively search for class or method definition in src directory
   function searchDirectory(dir: string): Location | null {
     try {
       const items = fs.readdirSync(dir);
@@ -482,7 +485,13 @@ function findClassDefinitionInSrc(srcDir: string, symbol: string): Location | nu
           if (result) return result;
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
-          const location = findClassDefinitionInFile(itemPath, content, symbol);
+          // First try to find class definition
+          let location = findClassDefinitionInFile(itemPath, content, symbol);
+          if (location) {
+            return location;
+          }
+          // Then try to find method definition within the class
+          location = findMethodDefinitionInFile(itemPath, content, symbol);
           if (location) {
             return location;
           }
@@ -495,6 +504,26 @@ function findClassDefinitionInSrc(srcDir: string, symbol: string): Location | nu
   }
 
   return searchDirectory(srcDir);
+}
+
+function findMethodDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
+  // Search for method definitions within classes
+  // This includes both instance methods and static methods
+  const methodRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
+  const match = methodRegex.exec(content);
+  if (match) {
+    const lines = content.substring(0, match.index).split('\n');
+    const line = lines.length - 1;
+    const character = lines[lines.length - 1].length;
+    return Location.create(
+      `file://${filePath}`,
+      Range.create(
+        Position.create(line, character),
+        Position.create(line, character + symbol.length)
+      )
+    );
+  }
+  return null;
 }
 
 function findClassDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
