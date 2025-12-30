@@ -416,15 +416,29 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
   for (const workspaceFolder of workspaceFolders) {
     const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
     if (fs.existsSync(varsDir)) {
+      connection.console.log(`Searching for function ${symbol} in vars directory: ${varsDir}`);
       try {
         const files = fs.readdirSync(varsDir);
         for (const file of files) {
           if (file.endsWith('.groovy')) {
             const filePath = path.join(varsDir, file);
             const content = fs.readFileSync(filePath, 'utf8');
-            const location = findFunctionDefinitionInFile(filePath, content, symbol);
-            if (location) {
-              return location;
+
+            // In Jenkins shared libraries, vars files can be called by their filename
+            // e.g., myUtils() calls the 'call' function in myUtils.groovy
+            const fileNameWithoutExt = file.replace('.groovy', '');
+            if (fileNameWithoutExt === symbol) {
+              // If the symbol matches the filename, look for the 'call' function
+              const location = findFunctionDefinitionInFile(filePath, content, 'call');
+              if (location) {
+                return location;
+              }
+            } else {
+              // Otherwise, look for a function with the exact symbol name
+              const location = findFunctionDefinitionInFile(filePath, content, symbol);
+              if (location) {
+                return location;
+              }
             }
           }
         }
@@ -449,22 +463,32 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
 function findFunctionDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
   // In Jenkins shared libraries, vars files typically contain a function with the same name as the file
   // The function is usually defined as: def call(...) { ... }
-  // But it can also be a direct function definition
-  const functionRegex = new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g');
-  const match = functionRegex.exec(content);
-  if (match) {
-    // Create a virtual document to get position
-    const lines = content.substring(0, match.index).split('\n');
-    const line = lines.length - 1;
-    const character = lines[lines.length - 1].length;
-    return Location.create(
-      `file://${filePath}`,
-      Range.create(
-        Position.create(line, character),
-        Position.create(line, character + symbol.length)
-      )
-    );
+  // But it can also be a direct function definition or have different signatures
+
+  const functionPatterns = [
+    // Standard function definition with def
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
+    // Function without def keyword (direct function definition)
+    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const functionRegex of functionPatterns) {
+    const match = functionRegex.exec(content);
+    if (match) {
+      // Create a virtual document to get position
+      const lines = content.substring(0, match.index).split('\n');
+      const line = lines.length - 1;
+      const character = lines[lines.length - 1].length;
+      return Location.create(
+        `file://${filePath}`,
+        Range.create(
+          Position.create(line, character),
+          Position.create(line, character + symbol.length)
+        )
+      );
+    }
   }
+
   return null;
 }
 
@@ -506,20 +530,37 @@ function findClassOrMethodDefinitionInSrc(srcDir: string, symbol: string): Locat
 function findMethodDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
   // Search for method definitions within classes
   // This includes both instance methods and static methods
-  const methodRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
-  const match = methodRegex.exec(content);
-  if (match) {
-    const lines = content.substring(0, match.index).split('\n');
-    const line = lines.length - 1;
-    const character = lines[lines.length - 1].length;
-    return Location.create(
-      `file://${filePath}`,
-      Range.create(
-        Position.create(line, character),
-        Position.create(line, character + symbol.length)
-      )
-    );
+  // Handle various method signature patterns:
+  // 1. def methodName(...) - explicit def return type
+  // 2. void methodName(...) - void return type
+  // 3. Type methodName(...) - specific return type
+  // 4. methodName(...) - no explicit return type
+  // 5. Generic<Type> methodName(...) - generic return types
+  // 6. Map<String, Object> methodName(...) - complex generic types
+
+  const methodPatterns = [
+    // Standard method with return type
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
+    // Method without explicit return type (property-like methods)
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const methodRegex of methodPatterns) {
+    const match = methodRegex.exec(content);
+    if (match) {
+      const lines = content.substring(0, match.index).split('\n');
+      const line = lines.length - 1;
+      const character = lines[lines.length - 1].length;
+      return Location.create(
+        `file://${filePath}`,
+        Range.create(
+          Position.create(line, character),
+          Position.create(line, character + symbol.length)
+        )
+      );
+    }
   }
+
   return null;
 }
 

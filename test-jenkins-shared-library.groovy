@@ -13,9 +13,13 @@ pipeline {
                     // Test global function from vars/myUtils.groovy
                     myUtils()  // Should go to definition in vars/myUtils.groovy
 
+                    // Test overloaded function
+                    myUtils([action: "deploy", target: "prod"])  // Should go to def call(Map config)
+
                     // Test other functions
-                    myUtils.deployTo("staging")  // Should go to deployTo method
-                    myUtils.notify("#devops")    // Should go to notify method
+                    myUtils.deployTo("staging")  // Should go to deployTo function
+                    myUtils.deployTo("prod", true)  // Should go to overloaded deployTo function
+                    myUtils.notify("#devops")    // Should go to notify function
                 }
             }
         }
@@ -32,6 +36,14 @@ pipeline {
                     // Test instance methods
                     echo helper.getProjectInfo()  // Should go to getProjectInfo method
                     helper.deploy()              // Should go to deploy method
+
+                    // Test methods with different signatures
+                    echo helper.build()          // Should go to build method (no explicit return type)
+                    def envs = helper.getSupportedEnvironments()  // Should go to getSupportedEnvironments method
+                    def config = helper.getConfig()  // Should go to getConfig method
+
+                    // Test static method with different signature
+                    def helper2 = com.example.JenkinsHelper.createFromConfig([name: "test-app", version: "2.0.0"])  // Should go to createFromConfig method
                 }
             }
         }
