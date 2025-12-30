@@ -27,6 +27,13 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  matchesParameterCount,
+  parseMethodParameters,
+  findMatchingParen,
+  findFunctionSignature,
+  findMethodSignature
+} from './utils';
 
 // Create a connection for the server
 const connection = createConnection(ProposedFeatures.all);
@@ -466,25 +473,6 @@ function findFunctionSignature(text: string, symbol: string, args: string[]): st
   return matchingSignatures[0];
 }
 
-function matchesParameterCount(expectedParams: string[], actualArgCount: number): boolean {
-  const paramCount = expectedParams.length;
-
-  // If no parameters expected, only match calls with no arguments
-  if (paramCount === 0) {
-    return actualArgCount === 0;
-  }
-
-  // Count how many parameters have default values (contain '=')
-  let requiredParamCount = 0;
-  for (const param of expectedParams) {
-    if (!param.includes('=')) {
-      requiredParamCount++;
-    }
-  }
-
-  // Match if actual args are between required params and total params
-  return actualArgCount >= requiredParamCount && actualArgCount <= paramCount;
-}
 
 function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): string | null {
   // Recursively search for method signature in src directory
@@ -774,68 +762,9 @@ function findMethodDefinitionWithSignature(text: string, symbol: string, args: s
   return null;
 }
 
-function parseMethodParameters(paramList: string): string[] {
-  if (!paramList.trim()) {
-    return [];
-  }
 
-  // Simple parameter parsing - split by commas but handle types
-  const params: string[] = [];
-  let currentParam = '';
-  let parenDepth = 0;
-  let inString = false;
-  let stringChar = '';
 
-  for (let i = 0; i < paramList.length; i++) {
-    const char = paramList[i];
 
-    if (inString) {
-      currentParam += char;
-      if (char === stringChar && paramList[i - 1] !== '\\') {
-        inString = false;
-        stringChar = '';
-      }
-    } else {
-      if ((char === '"' || char === "'") && paramList[i - 1] !== '\\') {
-        inString = true;
-        stringChar = char;
-        currentParam += char;
-      } else if (char === '(') {
-        parenDepth++;
-        currentParam += char;
-      } else if (char === ')') {
-        parenDepth--;
-        currentParam += char;
-      } else if (char === ',' && parenDepth === 0) {
-        params.push(currentParam.trim());
-        currentParam = '';
-      } else {
-        currentParam += char;
-      }
-    }
-  }
-
-  if (currentParam.trim()) {
-    params.push(currentParam.trim());
-  }
-
-  return params;
-}
-
-function findMatchingParen(text: string, openParenPos: number): number {
-  let depth = 0;
-  for (let i = openParenPos; i < text.length; i++) {
-    if (text[i] === '(') {
-      depth++;
-    } else if (text[i] === ')') {
-      depth--;
-      if (depth === 0) {
-        return i;
-      }
-    }
-  }
-  return -1;
-}
 
 function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
   if (workspaceFolders.length === 0) {
