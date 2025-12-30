@@ -365,6 +365,8 @@ function findMethodSignature(text: string, symbol: string, args: string[]): stri
     new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
   ];
 
+  const matchingSignatures: string[] = [];
+
   for (const methodRegex of methodPatterns) {
     let match;
     while ((match = methodRegex.exec(text)) !== null) {
@@ -375,18 +377,37 @@ function findMethodSignature(text: string, symbol: string, args: string[]): stri
         const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches
-        if (expectedParams.length === args.length) {
+        // Check if parameter count matches (considering default parameters)
+        if (matchesParameterCount(expectedParams, args.length)) {
           // Return the full signature
           const signatureStart = match.index;
           const signatureEnd = paramEnd + 1; // Include closing parenthesis
-          return text.substring(signatureStart, signatureEnd).trim();
+          const signature = text.substring(signatureStart, signatureEnd).trim();
+          matchingSignatures.push(signature);
         }
       }
     }
   }
 
-  return null;
+  if (matchingSignatures.length === 0) {
+    return null;
+  }
+
+  if (matchingSignatures.length === 1) {
+    return matchingSignatures[0];
+  }
+
+  // Multiple matches - try to choose the best one
+  // For map arguments, prefer Map parameters over other types
+  if (args.length === 1 && args[0].startsWith('[') && args[0].endsWith(']')) {
+    const mapSignature = matchingSignatures.find(sig => sig.includes('Map '));
+    if (mapSignature) {
+      return mapSignature;
+    }
+  }
+
+  // Otherwise, return the first one (maintains backward compatibility)
+  return matchingSignatures[0];
 }
 
 function findFunctionSignature(text: string, symbol: string, args: string[]): string | null {
@@ -396,6 +417,8 @@ function findFunctionSignature(text: string, symbol: string, args: string[]): st
     // Function without def keyword (direct function definition)
     new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\(`, 'g')
   ];
+
+  const matchingSignatures: string[] = [];
 
   for (const functionRegex of functionPatterns) {
     let match;
@@ -407,18 +430,57 @@ function findFunctionSignature(text: string, symbol: string, args: string[]): st
         const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches
-        if (expectedParams.length === args.length) {
+        // Check if parameter count matches (considering default parameters)
+        if (matchesParameterCount(expectedParams, args.length)) {
           // Return the full signature
           const signatureStart = match.index;
           const signatureEnd = paramEnd + 1; // Include closing parenthesis
-          return text.substring(signatureStart, signatureEnd).trim();
+          const signature = text.substring(signatureStart, signatureEnd).trim();
+          matchingSignatures.push(signature);
         }
       }
     }
   }
 
-  return null;
+  if (matchingSignatures.length === 0) {
+    return null;
+  }
+
+  if (matchingSignatures.length === 1) {
+    return matchingSignatures[0];
+  }
+
+  // Multiple matches - try to choose the best one
+  // For map arguments, prefer Map parameters over other types
+  if (args.length === 1 && args[0].startsWith('[') && args[0].endsWith(']')) {
+    const mapSignature = matchingSignatures.find(sig => sig.includes('Map '));
+    if (mapSignature) {
+      return mapSignature;
+    }
+  }
+
+  // Otherwise, return the first one (maintains backward compatibility)
+  return matchingSignatures[0];
+}
+
+function matchesParameterCount(expectedParams: string[], actualArgCount: number): boolean {
+  const paramCount = expectedParams.length;
+
+  // If no parameters expected, only match calls with no arguments
+  if (paramCount === 0) {
+    return actualArgCount === 0;
+  }
+
+  // Count how many parameters have default values (contain '=')
+  let requiredParamCount = 0;
+  for (const param of expectedParams) {
+    if (!param.includes('=')) {
+      requiredParamCount++;
+    }
+  }
+
+  // Match if actual args are between required params and total params
+  return actualArgCount >= requiredParamCount && actualArgCount <= paramCount;
 }
 
 function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): string | null {
@@ -688,8 +750,8 @@ function findMethodDefinitionWithSignature(text: string, symbol: string, args: s
         const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches
-        if (expectedParams.length === args.length) {
+        // Check if parameter count matches (considering default parameters)
+        if (matchesParameterCount(expectedParams, args.length)) {
           // Found a matching signature
           const lines = text.substring(0, match.index).split('\n');
           const line = lines.length - 1;
@@ -898,8 +960,8 @@ function findFunctionDefinitionWithSignature(filePath: string, content: string, 
         const paramList = content.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches
-        if (expectedParams.length === args.length) {
+        // Check if parameter count matches (considering default parameters)
+        if (matchesParameterCount(expectedParams, args.length)) {
           // Found a matching signature
           const lines = content.substring(0, match.index).split('\n');
           const line = lines.length - 1;
