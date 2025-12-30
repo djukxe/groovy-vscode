@@ -198,14 +198,42 @@ connection.onHover((params: HoverParams): Hover | null => {
 
   const text = document.getText();
   const offset = document.offsetAt(params.position);
-  
-  // Find the word at the cursor position
+
+  // First, try to extract function call context for signature information
+  const functionCallContext = extractFunctionCallContext(text, offset);
+  if (functionCallContext) {
+    const { symbol, args } = functionCallContext;
+
+    // Search for matching function signature
+    const signatureInfo = findFunctionSignatureForHover(document, text, symbol, args);
+    if (signatureInfo) {
+      return {
+        contents: {
+          kind: 'markdown',
+          value: signatureInfo
+        }
+      };
+    }
+
+    // If no exact signature match, try Jenkins shared libraries
+    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibrary(symbol, args);
+    if (sharedLibSignature) {
+      return {
+        contents: {
+          kind: 'markdown',
+          value: sharedLibSignature
+        }
+      };
+    }
+  }
+
+  // Find the word at the cursor position for keyword/symbol info
   const wordPattern = /\b\w+\b/g;
   let match;
   while ((match = wordPattern.exec(text)) !== null) {
     if (match.index <= offset && offset <= match.index + match[0].length) {
       const word = match[0];
-      
+
       // Provide hover info for Groovy keywords
       const keywordInfo = getKeywordInfo(word);
       if (keywordInfo) {
@@ -216,7 +244,7 @@ connection.onHover((params: HoverParams): Hover | null => {
           }
         };
       }
-      
+
       // Check if it's a class, method, or property
       const symbolInfo = findSymbolInfo(text, word);
       if (symbolInfo) {
@@ -266,6 +294,167 @@ function getKeywordInfo(keyword: string): string | null {
   };
 
   return keywords[keyword] || null;
+}
+
+function findFunctionSignatureForHover(document: TextDocument, text: string, symbol: string, args: string[]): string | null {
+  // Try to find method definition with matching signature
+  const signature = findMethodSignature(text, symbol, args);
+  if (signature) {
+    return formatSignature(symbol, signature);
+  }
+
+  return null;
+}
+
+function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: string[]): string | null {
+  if (workspaceFolders.length === 0) {
+    return null;
+  }
+
+  // Search in vars/ directory for global functions
+  for (const workspaceFolder of workspaceFolders) {
+    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
+    if (fs.existsSync(varsDir)) {
+      try {
+        const files = fs.readdirSync(varsDir);
+        for (const file of files) {
+          if (file.endsWith('.groovy')) {
+            const filePath = path.join(varsDir, file);
+            const content = fs.readFileSync(filePath, 'utf8');
+
+            // In Jenkins shared libraries, vars files can be called by their filename
+            const fileNameWithoutExt = file.replace('.groovy', '');
+            if (fileNameWithoutExt === symbol) {
+              // If the symbol matches the filename, look for the 'call' function with matching signature
+              const signature = findFunctionSignature(content, 'call', args);
+              if (signature) {
+                return formatSignature(`${fileNameWithoutExt}.call`, signature);
+              }
+            } else {
+              // Otherwise, look for a function with the exact symbol name and matching signature
+              const signature = findFunctionSignature(content, symbol, args);
+              if (signature) {
+                return formatSignature(symbol, signature);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors reading vars directory
+      }
+    }
+
+    // Search in src/ directory for classes and their methods
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
+    if (fs.existsSync(srcDir)) {
+      const signature = findMethodSignatureInSrc(srcDir, symbol, args);
+      if (signature) {
+        return formatSignature(symbol, signature);
+      }
+    }
+  }
+
+  return null;
+}
+
+function findMethodSignature(text: string, symbol: string, args: string[]): string | null {
+  const methodPatterns = [
+    // Standard method with return type
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
+    // Method without explicit return type (property-like methods)
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const methodRegex of methodPatterns) {
+    let match;
+    while ((match = methodRegex.exec(text)) !== null) {
+      // Extract the parameter list from the method definition
+      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      const paramEnd = findMatchingParen(text, paramStart);
+      if (paramEnd !== -1) {
+        const paramList = text.substring(paramStart + 1, paramEnd);
+        const expectedParams = parseMethodParameters(paramList);
+
+        // Check if parameter count matches
+        if (expectedParams.length === args.length) {
+          // Return the full signature
+          const signatureStart = match.index;
+          const signatureEnd = paramEnd + 1; // Include closing parenthesis
+          return text.substring(signatureStart, signatureEnd).trim();
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function findFunctionSignature(text: string, symbol: string, args: string[]): string | null {
+  const functionPatterns = [
+    // Standard function definition with def
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
+    // Function without def keyword (direct function definition)
+    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const functionRegex of functionPatterns) {
+    let match;
+    while ((match = functionRegex.exec(text)) !== null) {
+      // Extract the parameter list from the function definition
+      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      const paramEnd = findMatchingParen(text, paramStart);
+      if (paramEnd !== -1) {
+        const paramList = text.substring(paramStart + 1, paramEnd);
+        const expectedParams = parseMethodParameters(paramList);
+
+        // Check if parameter count matches
+        if (expectedParams.length === args.length) {
+          // Return the full signature
+          const signatureStart = match.index;
+          const signatureEnd = paramEnd + 1; // Include closing parenthesis
+          return text.substring(signatureStart, signatureEnd).trim();
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): string | null {
+  // Recursively search for method signature in src directory
+  function searchDirectory(dir: string): string | null {
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const itemPath = path.join(dir, item);
+        const stat = fs.statSync(itemPath);
+
+        if (stat.isDirectory()) {
+          const result = searchDirectory(itemPath);
+          if (result) return result;
+        } else if (item.endsWith('.groovy')) {
+          const content = fs.readFileSync(itemPath, 'utf8');
+          const signature = findMethodSignature(content, symbol, args);
+          if (signature) {
+            return signature;
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore errors reading directory
+    }
+    return null;
+  }
+
+  return searchDirectory(srcDir);
+}
+
+function formatSignature(symbol: string, signature: string): string {
+  // Clean up the signature for display
+  const cleanSignature = signature.replace(/\s+/g, ' ').trim();
+
+  return `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
 }
 
 function findSymbolInfo(text: string, symbol: string): string | null {
