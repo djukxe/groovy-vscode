@@ -360,9 +360,9 @@ function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: strin
 function findMethodSignature(text: string, symbol: string, args: string[]): string | null {
   const methodPatterns = [
     // Standard method with return type
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g'),
     // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g')
   ];
 
   const matchingSignatures: string[] = [];
@@ -370,8 +370,10 @@ function findMethodSignature(text: string, symbol: string, args: string[]): stri
   for (const methodRegex of methodPatterns) {
     let match;
     while ((match = methodRegex.exec(text)) !== null) {
-      // Extract the parameter list from the method definition
-      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      // The regex now matches up to the opening brace, so we need to find the closing paren
+      // Find the opening paren position
+      const openParenIndex = match[0].indexOf('(');
+      const paramStart = match.index + openParenIndex;
       const paramEnd = findMatchingParen(text, paramStart);
       if (paramEnd !== -1) {
         const paramList = text.substring(paramStart + 1, paramEnd);
@@ -379,7 +381,7 @@ function findMethodSignature(text: string, symbol: string, args: string[]): stri
 
         // Check if parameter count matches (considering default parameters)
         if (matchesParameterCount(expectedParams, args.length)) {
-          // Return the full signature
+          // Return the full signature (up to closing paren)
           const signatureStart = match.index;
           const signatureEnd = paramEnd + 1; // Include closing parenthesis
           const signature = text.substring(signatureStart, signatureEnd).trim();
@@ -413,9 +415,9 @@ function findMethodSignature(text: string, symbol: string, args: string[]): stri
 function findFunctionSignature(text: string, symbol: string, args: string[]): string | null {
   const functionPatterns = [
     // Standard function definition with def
-    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g'),
     // Function without def keyword (direct function definition)
-    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\(`, 'g')
+    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g')
   ];
 
   const matchingSignatures: string[] = [];
@@ -423,8 +425,9 @@ function findFunctionSignature(text: string, symbol: string, args: string[]): st
   for (const functionRegex of functionPatterns) {
     let match;
     while ((match = functionRegex.exec(text)) !== null) {
-      // Extract the parameter list from the function definition
-      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      // Find the opening paren position
+      const openParenIndex = match[0].indexOf('(');
+      const paramStart = match.index + openParenIndex;
       const paramEnd = findMatchingParen(text, paramStart);
       if (paramEnd !== -1) {
         const paramList = text.substring(paramStart + 1, paramEnd);
@@ -432,7 +435,7 @@ function findFunctionSignature(text: string, symbol: string, args: string[]): st
 
         // Check if parameter count matches (considering default parameters)
         if (matchesParameterCount(expectedParams, args.length)) {
-          // Return the full signature
+          // Return the full signature (up to closing paren)
           const signatureStart = match.index;
           const signatureEnd = paramEnd + 1; // Include closing parenthesis
           const signature = text.substring(signatureStart, signatureEnd).trim();
