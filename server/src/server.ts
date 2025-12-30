@@ -416,7 +416,6 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
   for (const workspaceFolder of workspaceFolders) {
     const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
     if (fs.existsSync(varsDir)) {
-      connection.console.log(`Searching for function ${symbol} in vars directory: ${varsDir}`);
       try {
         const files = fs.readdirSync(varsDir);
         for (const file of files) {
@@ -437,10 +436,8 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
     // Search in src/ directory for classes and their methods
     const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
     if (fs.existsSync(srcDir)) {
-      connection.console.log(`Searching for class or method ${symbol} in src directory: ${srcDir}`);
       const location = findClassOrMethodDefinitionInSrc(srcDir, symbol);
       if (location) {
-        connection.console.log(`Found location: ${location}`);
         return location;
       }
     }
