@@ -336,34 +336,112 @@ connection.onDefinition((params: DefinitionParams): Definition | null => {
   const text = document.getText();
   const offset = document.offsetAt(params.position);
 
-  // Find the word at the cursor position
-  const wordPattern = /\b\w+\b/g;
-  let match;
-  let targetWord: string | null = null;
-
-  while ((match = wordPattern.exec(text)) !== null) {
-    if (match.index <= offset && offset <= match.index + match[0].length) {
-      targetWord = match[0];
-      break;
-    }
-  }
-
-  if (!targetWord) {
+  // Find the word at the cursor position and extract function call context
+  const functionCallContext = extractFunctionCallContext(text, offset);
+  if (!functionCallContext) {
     return null;
   }
 
+  const { symbol, args } = functionCallContext;
+
   // First, search for the definition in the current document
-  let definition = findDefinitionInDocument(document, text, targetWord);
+  let definition = findDefinitionInDocumentWithSignature(document, text, symbol, args);
   if (definition) {
     return definition;
   }
 
   // If not found in current document, search in Jenkins shared library files
-  definition = findDefinitionInJenkinsSharedLibrary(targetWord);
+  definition = findDefinitionInJenkinsSharedLibraryWithSignature(symbol, args);
   return definition;
 });
 
-function findDefinitionInDocument(document: TextDocument, text: string, symbol: string): Location | null {
+function extractFunctionCallContext(text: string, offset: number): { symbol: string, args: string[] } | null {
+  // Find the function call that contains the offset
+  // Look for patterns like: symbol(args) or obj.symbol(args)
+
+  // First, try to find a function call ending at or after the offset
+  const functionCallPattern = /(\w+(?:\.\w+)*)\s*\(([^)]*)\)/g;
+  let match;
+
+  while ((match = functionCallPattern.exec(text)) !== null) {
+    const callStart = match.index;
+    const callEnd = match.index + match[0].length;
+
+    // Check if the offset is within this function call
+    if (callStart <= offset && offset <= callEnd) {
+      const fullSymbol = match[1];
+      const argsString = match[2];
+
+      // Extract the actual function name (last part after dots)
+      const symbolParts = fullSymbol.split('.');
+      const symbol = symbolParts[symbolParts.length - 1];
+
+      // Parse arguments
+      const args = parseArguments(argsString);
+
+      return { symbol, args };
+    }
+  }
+
+  return null;
+}
+
+function parseArguments(argsString: string): string[] {
+  if (!argsString.trim()) {
+    return [];
+  }
+
+  // Simple argument parsing - split by commas but be careful with nested structures
+  const args: string[] = [];
+  let currentArg = '';
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let inString = false;
+  let stringChar = '';
+
+  for (let i = 0; i < argsString.length; i++) {
+    const char = argsString[i];
+
+    if (inString) {
+      currentArg += char;
+      if (char === stringChar && argsString[i - 1] !== '\\') {
+        inString = false;
+        stringChar = '';
+      }
+    } else {
+      if ((char === '"' || char === "'") && argsString[i - 1] !== '\\') {
+        inString = true;
+        stringChar = char;
+        currentArg += char;
+      } else if (char === '(') {
+        parenDepth++;
+        currentArg += char;
+      } else if (char === ')') {
+        parenDepth--;
+        currentArg += char;
+      } else if (char === '[') {
+        bracketDepth++;
+        currentArg += char;
+      } else if (char === ']') {
+        bracketDepth--;
+        currentArg += char;
+      } else if (char === ',' && parenDepth === 0 && bracketDepth === 0) {
+        args.push(currentArg.trim());
+        currentArg = '';
+      } else {
+        currentArg += char;
+      }
+    }
+  }
+
+  if (currentArg.trim()) {
+    args.push(currentArg.trim());
+  }
+
+  return args;
+}
+
+function findDefinitionInDocumentWithSignature(document: TextDocument, text: string, symbol: string, args: string[]): Location | null {
   // Try to find class definition
   const classRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+(${symbol})\\b`, 'g');
   let match = classRegex.exec(text);
@@ -373,17 +451,13 @@ function findDefinitionInDocument(document: TextDocument, text: string, symbol: 
     const endPos = document.positionAt(startOffset + symbol.length);
     return Location.create(document.uri, Range.create(startPos, endPos));
   }
-  
-  // Try to find method definition
-  const methodRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+(${symbol})\\s*\\(`, 'g');
-  match = methodRegex.exec(text);
-  if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+
+  // Try to find method definition with matching signature
+  const location = findMethodDefinitionWithSignature(text, symbol, args);
+  if (location) {
+    return Location.create(document.uri, location.range);
   }
-  
+
   // Try to find property/field definition
   const propertyRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static|final)?\\s*(?:def|\\w+)\\s+(${symbol})\\s*=`, 'g');
   match = propertyRegex.exec(text);
@@ -393,7 +467,7 @@ function findDefinitionInDocument(document: TextDocument, text: string, symbol: 
     const endPos = document.positionAt(startOffset + symbol.length);
     return Location.create(document.uri, Range.create(startPos, endPos));
   }
-  
+
   // Try to find variable definition (including method parameters and local variables)
   const variableRegex = new RegExp(`(?:^|\\n|\\(|,)\\s*(?:def|\\w+)?\\s+(${symbol})\\s*(?:=|,|\\)|\\n)`, 'g');
   match = variableRegex.exec(text);
@@ -403,8 +477,110 @@ function findDefinitionInDocument(document: TextDocument, text: string, symbol: 
     const endPos = document.positionAt(startOffset + symbol.length);
     return Location.create(document.uri, Range.create(startPos, endPos));
   }
-  
+
   return null;
+}
+
+function findMethodDefinitionWithSignature(text: string, symbol: string, args: string[]): Location | null {
+  const methodPatterns = [
+    // Standard method with return type
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
+    // Method without explicit return type (property-like methods)
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const methodRegex of methodPatterns) {
+    let match;
+    while ((match = methodRegex.exec(text)) !== null) {
+      // Extract the parameter list from the method definition
+      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      const paramEnd = findMatchingParen(text, paramStart);
+      if (paramEnd !== -1) {
+        const paramList = text.substring(paramStart + 1, paramEnd);
+        const expectedParams = parseMethodParameters(paramList);
+
+        // Check if parameter count matches
+        if (expectedParams.length === args.length) {
+          // Found a matching signature
+          const lines = text.substring(0, match.index).split('\n');
+          const line = lines.length - 1;
+          const character = lines[lines.length - 1].length;
+          return Location.create(
+            '', // Will be set by caller
+            Range.create(
+              Position.create(line, character),
+              Position.create(line, character + symbol.length)
+            )
+          );
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function parseMethodParameters(paramList: string): string[] {
+  if (!paramList.trim()) {
+    return [];
+  }
+
+  // Simple parameter parsing - split by commas but handle types
+  const params: string[] = [];
+  let currentParam = '';
+  let parenDepth = 0;
+  let inString = false;
+  let stringChar = '';
+
+  for (let i = 0; i < paramList.length; i++) {
+    const char = paramList[i];
+
+    if (inString) {
+      currentParam += char;
+      if (char === stringChar && paramList[i - 1] !== '\\') {
+        inString = false;
+        stringChar = '';
+      }
+    } else {
+      if ((char === '"' || char === "'") && paramList[i - 1] !== '\\') {
+        inString = true;
+        stringChar = char;
+        currentParam += char;
+      } else if (char === '(') {
+        parenDepth++;
+        currentParam += char;
+      } else if (char === ')') {
+        parenDepth--;
+        currentParam += char;
+      } else if (char === ',' && parenDepth === 0) {
+        params.push(currentParam.trim());
+        currentParam = '';
+      } else {
+        currentParam += char;
+      }
+    }
+  }
+
+  if (currentParam.trim()) {
+    params.push(currentParam.trim());
+  }
+
+  return params;
+}
+
+function findMatchingParen(text: string, openParenPos: number): number {
+  let depth = 0;
+  for (let i = openParenPos; i < text.length; i++) {
+    if (text[i] === '(') {
+      depth++;
+    } else if (text[i] === ')') {
+      depth--;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
@@ -460,11 +636,62 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
   return null;
 }
 
-function findFunctionDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
-  // In Jenkins shared libraries, vars files typically contain a function with the same name as the file
-  // The function is usually defined as: def call(...) { ... }
-  // But it can also be a direct function definition or have different signatures
+function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args: string[]): Location | null {
+  if (workspaceFolders.length === 0) {
+    return null;
+  }
 
+  // Search in vars/ directory for global functions
+  for (const workspaceFolder of workspaceFolders) {
+    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
+    if (fs.existsSync(varsDir)) {
+      connection.console.log(`Searching for function ${symbol} with ${args.length} args in vars directory: ${varsDir}`);
+      try {
+        const files = fs.readdirSync(varsDir);
+        for (const file of files) {
+          if (file.endsWith('.groovy')) {
+            const filePath = path.join(varsDir, file);
+            const content = fs.readFileSync(filePath, 'utf8');
+
+            // In Jenkins shared libraries, vars files can be called by their filename
+            // e.g., myUtils() calls the 'call' function in myUtils.groovy
+            const fileNameWithoutExt = file.replace('.groovy', '');
+            if (fileNameWithoutExt === symbol) {
+              // If the symbol matches the filename, look for the 'call' function with matching signature
+              const location = findFunctionDefinitionWithSignature(filePath, content, 'call', args);
+              if (location) {
+                return location;
+              }
+            } else {
+              // Otherwise, look for a function with the exact symbol name and matching signature
+              const location = findFunctionDefinitionWithSignature(filePath, content, symbol, args);
+              if (location) {
+                return location;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors reading vars directory
+      }
+    }
+
+    // Search in src/ directory for classes and their methods
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
+    if (fs.existsSync(srcDir)) {
+      connection.console.log(`Searching for class or method ${symbol} with ${args.length} args in src directory: ${srcDir}`);
+      const location = findClassOrMethodDefinitionInSrcWithSignature(srcDir, symbol, args);
+      if (location) {
+        connection.console.log(`Found location: ${location}`);
+        return location;
+      }
+    }
+  }
+
+  return null;
+}
+
+function findFunctionDefinitionWithSignature(filePath: string, content: string, symbol: string, args: string[]): Location | null {
   const functionPatterns = [
     // Standard function definition with def
     new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
@@ -473,20 +700,106 @@ function findFunctionDefinitionInFile(filePath: string, content: string, symbol:
   ];
 
   for (const functionRegex of functionPatterns) {
-    const match = functionRegex.exec(content);
-    if (match) {
-      // Create a virtual document to get position
-      const lines = content.substring(0, match.index).split('\n');
-      const line = lines.length - 1;
-      const character = lines[lines.length - 1].length;
-      return Location.create(
-        `file://${filePath}`,
-        Range.create(
-          Position.create(line, character),
-          Position.create(line, character + symbol.length)
-        )
-      );
+    let match;
+    while ((match = functionRegex.exec(content)) !== null) {
+      // Extract the parameter list from the function definition
+      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+      const paramEnd = findMatchingParen(content, paramStart);
+      if (paramEnd !== -1) {
+        const paramList = content.substring(paramStart + 1, paramEnd);
+        const expectedParams = parseMethodParameters(paramList);
+
+        // Check if parameter count matches
+        if (expectedParams.length === args.length) {
+          // Found a matching signature
+          const lines = content.substring(0, match.index).split('\n');
+          const line = lines.length - 1;
+          const character = lines[lines.length - 1].length;
+          return Location.create(
+            `file://${filePath}`,
+            Range.create(
+              Position.create(line, character),
+              Position.create(line, character + symbol.length)
+            )
+          );
+        }
+      }
     }
+  }
+
+  return null;
+}
+
+function findClassOrMethodDefinitionInSrcWithSignature(srcDir: string, symbol: string, args: string[]): Location | null {
+  // Recursively search for class or method definition in src directory
+  function searchDirectory(dir: string): Location | null {
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const itemPath = path.join(dir, item);
+        const stat = fs.statSync(itemPath);
+
+        if (stat.isDirectory()) {
+          const result = searchDirectory(itemPath);
+          if (result) return result;
+        } else if (item.endsWith('.groovy')) {
+          const content = fs.readFileSync(itemPath, 'utf8');
+          // First try to find class definition
+          let location = findClassDefinitionInFile(itemPath, content, symbol);
+          if (location) {
+            return location;
+          }
+          // Then try to find method definition with matching signature
+          location = findMethodDefinitionWithSignature(content, symbol, args);
+          if (location) {
+            return Location.create(`file://${itemPath}`, location.range);
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore errors reading directory
+    }
+    return null;
+  }
+
+  return searchDirectory(srcDir);
+}
+
+function findFunctionDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
+  // For overloaded functions, find the first occurrence of the function name
+  // This ensures we jump to where the function is defined, showing all overloads
+
+  const functionPatterns = [
+    // Standard function definition with def
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
+    // Function without def keyword (direct function definition)
+    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\(`, 'g')
+  ];
+
+  let firstMatch: RegExpExecArray | null = null;
+  let earliestPosition = Infinity;
+
+  for (const functionRegex of functionPatterns) {
+    let match;
+    while ((match = functionRegex.exec(content)) !== null) {
+      if (match.index < earliestPosition) {
+        earliestPosition = match.index;
+        firstMatch = match;
+      }
+    }
+  }
+
+  if (firstMatch) {
+    const lines = content.substring(0, firstMatch.index).split('\n');
+    const line = lines.length - 1;
+    const character = lines[lines.length - 1].length;
+    return Location.create(
+      `file://${filePath}`,
+      Range.create(
+        Position.create(line, character),
+        Position.create(line, character + symbol.length)
+      )
+    );
   }
 
   return null;
@@ -528,15 +841,8 @@ function findClassOrMethodDefinitionInSrc(srcDir: string, symbol: string): Locat
 }
 
 function findMethodDefinitionInFile(filePath: string, content: string, symbol: string): Location | null {
-  // Search for method definitions within classes
-  // This includes both instance methods and static methods
-  // Handle various method signature patterns:
-  // 1. def methodName(...) - explicit def return type
-  // 2. void methodName(...) - void return type
-  // 3. Type methodName(...) - specific return type
-  // 4. methodName(...) - no explicit return type
-  // 5. Generic<Type> methodName(...) - generic return types
-  // 6. Map<String, Object> methodName(...) - complex generic types
+  // For overloaded methods, find the first occurrence of the method name
+  // This ensures we jump to where the method is defined, showing all overloads
 
   const methodPatterns = [
     // Standard method with return type
@@ -545,20 +851,30 @@ function findMethodDefinitionInFile(filePath: string, content: string, symbol: s
     new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
   ];
 
+  let firstMatch: RegExpExecArray | null = null;
+  let earliestPosition = Infinity;
+
   for (const methodRegex of methodPatterns) {
-    const match = methodRegex.exec(content);
-    if (match) {
-      const lines = content.substring(0, match.index).split('\n');
-      const line = lines.length - 1;
-      const character = lines[lines.length - 1].length;
-      return Location.create(
-        `file://${filePath}`,
-        Range.create(
-          Position.create(line, character),
-          Position.create(line, character + symbol.length)
-        )
-      );
+    let match;
+    while ((match = methodRegex.exec(content)) !== null) {
+      if (match.index < earliestPosition) {
+        earliestPosition = match.index;
+        firstMatch = match;
+      }
     }
+  }
+
+  if (firstMatch) {
+    const lines = content.substring(0, firstMatch.index).split('\n');
+    const line = lines.length - 1;
+    const character = lines[lines.length - 1].length;
+    return Location.create(
+      `file://${filePath}`,
+      Range.create(
+        Position.create(line, character),
+        Position.create(line, character + symbol.length)
+      )
+    );
   }
 
   return null;
