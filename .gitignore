@@ -1,6 +1,7 @@
 node_modules/
 out/
 dist/
+client/server/
 *.vsix
 .vscode-test/
 .DS_Store
