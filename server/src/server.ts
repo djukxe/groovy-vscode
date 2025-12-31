@@ -30,9 +30,7 @@ import * as path from 'path';
 import {
   matchesParameterCount,
   parseMethodParameters,
-  findMatchingParen,
-  findFunctionSignature,
-  findMethodSignature
+  findMatchingParen
 } from './utils';
 
 // Create a connection for the server

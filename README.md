@@ -139,6 +139,57 @@ The extension will provide:
 - Hover information on keywords
 - Error diagnostics for unmatched braces/parentheses
 
+## Publishing to VS Code Marketplace
+
+### Prerequisites
+
+1. Create a Microsoft account and VS Code marketplace publisher account at https://marketplace.visualstudio.com/
+2. Install VSCE (Visual Studio Code Extension) tool globally:
+   ```bash
+   npm install -g @vscode/vsce
+   ```
+
+3. Generate a Personal Access Token (PAT) from your Azure DevOps account with marketplace permissions
+
+### Publishing Steps
+
+1. **Update Repository URL**: Update the repository URL in `client/package.json` to point to your actual GitHub repository
+
+2. **Create Extension Icon**: Create a 128x128 PNG icon at `client/icons/icon.png` and uncomment the icon line in `client/package.json`
+
+3. **Package the Extension**:
+   ```bash
+   cd client
+   npm run package
+   ```
+
+4. **Publish to Marketplace**:
+   ```bash
+   # Login to VSCE
+   vsce login <publisher-name>
+
+   # Publish
+   npm run publish
+   ```
+
+   Or publish a specific version:
+   ```bash
+   npm run publish:patch  # For bug fixes
+   npm run publish:minor  # For new features
+   npm run publish:major  # For breaking changes
+   ```
+
+### Testing the Extension
+
+Before publishing, test the packaged extension:
+
+1. Install the `.vsix` file locally in VS Code:
+   - Open VS Code
+   - Extensions panel → `...` menu → Install from VSIX
+   - Select the generated `.vsix` file
+
+2. Test all features with `.groovy` files
+
 ## Requirements
 
 - Node.js 18.0 or higher

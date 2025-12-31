@@ -1,22 +1,61 @@
 {
-  "name": "groovy-vscode-client",
+  "name": "groovy-language-support",
   "version": "0.1.0",
-  "description": "VSCode Extension for Groovy Language Support",
+  "description": "Full-featured Groovy language support for VS Code with Jenkins shared library support",
   "publisher": "groovy-language-support",
   "displayName": "Groovy Language Support",
-  "categories": ["Programming Languages"],
-  "keywords": ["groovy", "language-server"],
+  "author": {
+    "name": "Julien TAHON"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djukxe/groovy-vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/djukxe/groovy-vscode-extension/issues"
+  },
+  "homepage": "https://github.com/djukxe/groovy-vscode-extension#readme",
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "keywords": [
+    "groovy",
+    "language-server",
+    "jenkins",
+    "shared-library"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
-  "activationEvents": ["onLanguage:groovy"],
-  "main": "./out/extension.js",
+  "galleryBanner": {
+    "color": "#2D2D30",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "workspaceContains:**/*.groovy",
+    "workspaceContains:**/*.gvy",
+    "workspaceContains:**/*.gy",
+    "workspaceContains:**/*.gsh"
+  ],
+  "main": "./dist/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "groovy",
-        "aliases": ["Groovy", "groovy"],
-        "extensions": [".groovy", ".gvy", ".gy", ".gsh"],
+        "aliases": [
+          "Groovy",
+          "groovy"
+        ],
+        "extensions": [
+          ".groovy",
+          ".gvy",
+          ".gy",
+          ".gsh"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -29,10 +68,16 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -b",
+    "compile": "tsc -b && mkdir -p ./server && cp ../server/dist/server.js ./server/",
+    "build": "npm run compile && webpack --mode production",
     "watch": "tsc -b -w",
     "test": "echo 'No tests for client'",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "publish:minor": "vsce publish minor",
+    "publish:major": "vsce publish major",
+    "publish:patch": "vsce publish patch"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -40,6 +85,9 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.3.0"
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.3.0",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1"
   }
 }

@@ -1,0 +1,23 @@
+# Exclude parent directory files
+../**
+
+# Exclude development files
+.vscode/
+src/
+tsconfig.json
+tsconfig.tsbuildinfo
+*.ts
+*.map
+out/
+
+# Exclude macOS files
+.DS_Store
+
+# Include only necessary files
+!dist/
+!server/server.js
+!syntaxes/
+!language-configuration.json
+!package.json
+!icons/icon.png
+!icons/icon.svg
