@@ -65,7 +65,22 @@
         "scopeName": "source.groovy",
         "path": "./syntaxes/groovy.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Groovy Language Support",
+      "properties": {
+        "groovy.jenkins.sharedLibrary.varsPath": {
+          "type": "string",
+          "default": "vars",
+          "description": "Relative path to the Jenkins shared library vars directory (containing global functions)"
+        },
+        "groovy.jenkins.sharedLibrary.srcPath": {
+          "type": "string",
+          "default": "src",
+          "description": "Relative path to the Jenkins shared library src directory (containing classes and methods)"
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -b && mkdir -p ./server && cp ../server/dist/server.js ./server/",

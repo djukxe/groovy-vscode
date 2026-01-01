@@ -43,6 +43,10 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let workspaceFolders: WorkspaceFolder[] = [];
 
+// Configuration for Jenkins shared library paths
+let varsPath = 'vars';
+let srcPath = 'src';
+
 connection.onInitialize((params: InitializeParams) => {
   const capabilities = params.capabilities;
 
@@ -85,6 +89,29 @@ connection.onInitialize((params: InitializeParams) => {
 connection.onInitialized(() => {
   if (hasConfigurationCapability) {
     connection.client.register(DidChangeConfigurationNotification.type, undefined);
+  }
+
+  // Request configuration for Jenkins shared library paths
+  if (hasConfigurationCapability) {
+    connection.workspace.getConfiguration('groovy.jenkins.sharedLibrary').then(config => {
+      if (config) {
+        varsPath = config.varsPath || 'vars';
+        srcPath = config.srcPath || 'src';
+        connection.console.log(`Jenkins shared library paths configured: vars=${varsPath}, src=${srcPath}`);
+      }
+    });
+  }
+});
+
+connection.onDidChangeConfiguration((change) => {
+  if (hasConfigurationCapability) {
+    connection.workspace.getConfiguration('groovy.jenkins.sharedLibrary').then(config => {
+      if (config) {
+        varsPath = config.varsPath || 'vars';
+        srcPath = config.srcPath || 'src';
+        connection.console.log(`Jenkins shared library paths updated: vars=${varsPath}, src=${srcPath}`);
+      }
+    });
   }
 });
 
@@ -318,7 +345,7 @@ function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: strin
 
   // Search in vars/ directory for global functions
   for (const workspaceFolder of workspaceFolders) {
-    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
+    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), varsPath);
     if (fs.existsSync(varsDir)) {
       try {
         const files = fs.readdirSync(varsDir);
@@ -350,7 +377,7 @@ function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: strin
     }
 
     // Search in src/ directory for classes and their methods
-    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
     if (fs.existsSync(srcDir)) {
       const signature = findMethodSignatureInSrc(srcDir, symbol, args);
       if (signature) {
@@ -771,7 +798,7 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
 
   // Search in vars/ directory for global functions
   for (const workspaceFolder of workspaceFolders) {
-    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
+    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), varsPath);
     if (fs.existsSync(varsDir)) {
       connection.console.log(`Searching for function ${symbol} in vars directory: ${varsDir}`);
       try {
@@ -805,7 +832,7 @@ function findDefinitionInJenkinsSharedLibrary(symbol: string): Location | null {
     }
 
     // Search in src/ directory for classes and their methods
-    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
     if (fs.existsSync(srcDir)) {
       const location = findClassOrMethodDefinitionInSrc(srcDir, symbol);
       if (location) {
@@ -824,7 +851,7 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
 
   // Search in vars/ directory for global functions
   for (const workspaceFolder of workspaceFolders) {
-    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), 'vars');
+    const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), varsPath);
     if (fs.existsSync(varsDir)) {
       connection.console.log(`Searching for function ${symbol} with ${args.length} args in vars directory: ${varsDir}`);
       try {
@@ -858,7 +885,7 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
     }
 
     // Search in src/ directory for classes and their methods
-    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), 'src');
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
     if (fs.existsSync(srcDir)) {
       connection.console.log(`Searching for class or method ${symbol} with ${args.length} args in src directory: ${srcDir}`);
       const location = findClassOrMethodDefinitionInSrcWithSignature(srcDir, symbol, args);
