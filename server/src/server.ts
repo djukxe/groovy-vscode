@@ -31,7 +31,8 @@ import {
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParen,
-  findFunctionSignature
+  findFunctionSignature,
+  findMethodSignature
 } from './utils';
 
 // Create a connection for the server
@@ -388,61 +389,6 @@ function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: strin
   }
 
   return null;
-}
-
-function findMethodSignature(text: string, symbol: string, args: string[]): string | null {
-  const methodPatterns = [
-    // Standard method with return type
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g'),
-    // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g')
-  ];
-
-  const matchingSignatures: string[] = [];
-
-  for (const methodRegex of methodPatterns) {
-    let match;
-    while ((match = methodRegex.exec(text)) !== null) {
-      // The regex now matches up to the opening brace, so we need to find the closing paren
-      // Find the opening paren position
-      const openParenIndex = match[0].indexOf('(');
-      const paramStart = match.index + openParenIndex;
-      const paramEnd = findMatchingParen(text, paramStart);
-      if (paramEnd !== -1) {
-        const paramList = text.substring(paramStart + 1, paramEnd);
-        const expectedParams = parseMethodParameters(paramList);
-
-        // Check if parameter count matches (considering default parameters)
-        if (matchesParameterCount(expectedParams, args.length)) {
-          // Return the full signature (up to closing paren)
-          const signatureStart = match.index;
-          const signatureEnd = paramEnd + 1; // Include closing parenthesis
-          const signature = text.substring(signatureStart, signatureEnd).trim();
-          matchingSignatures.push(signature);
-        }
-      }
-    }
-  }
-
-  if (matchingSignatures.length === 0) {
-    return null;
-  }
-
-  if (matchingSignatures.length === 1) {
-    return matchingSignatures[0];
-  }
-
-  // Multiple matches - try to choose the best one
-  // For map arguments, prefer Map parameters over other types
-  if (args.length === 1 && args[0].startsWith('[') && args[0].endsWith(']')) {
-    const mapSignature = matchingSignatures.find(sig => sig.includes('Map '));
-    if (mapSignature) {
-      return mapSignature;
-    }
-  }
-
-  // Otherwise, return the first one (maintains backward compatibility)
-  return matchingSignatures[0];
 }
 
 function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): string | null {
