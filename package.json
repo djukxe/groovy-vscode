@@ -49,6 +49,19 @@
           ".gsh"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "jenkins-pipeline",
+        "aliases": [
+          "Jenkinsfile"
+        ],
+        "extensions": [
+          ".jenkins",
+          ".pipeline"
+        ],
+        "filenames": [
+          "Jenkinsfile"
+        ]
       }
     ],
     "grammars": [
@@ -56,6 +69,14 @@
         "language": "groovy",
         "scopeName": "source.groovy",
         "path": "./client/syntaxes/groovy.tmLanguage.json"
+      },
+      {
+        "language": "jenkins-pipeline",
+        "scopeName": "source.jenkins.pipeline",
+        "path": "./client/syntaxes/jenkins-pipeline.tmLanguage.json",
+        "injectTo": [
+          "source.groovy"
+        ]
       }
     ],
     "configuration": {
@@ -81,11 +102,11 @@
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish",
-		"lint": "eslint",
+    "lint": "eslint",
     "publish:minor": "vsce publish minor",
     "publish:major": "vsce publish major",
     "publish:patch": "vsce publish patch",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+    "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

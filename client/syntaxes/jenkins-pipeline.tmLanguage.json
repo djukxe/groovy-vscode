@@ -1,0 +1,111 @@
+{
+  "name": "Jenkins Pipeline (Groovy)",
+  "scopeName": "source.jenkins.pipeline",
+  "fileTypes": ["Jenkinsfile", "jenkins", "pipeline"],
+  "patterns": [
+    { "include": "source.groovy" },
+    { "include": "#jenkins-blocks" },
+    { "include": "#jenkins-directives" },
+    { "include": "#jenkins-steps" },
+    { "include": "#jenkins-post" },
+    { "include": "#jenkins-when" },
+    { "include": "#jenkins-parameters" },
+    { "include": "#jenkins-agent" },
+    { "include": "#jenkins-annotations" }
+  ],
+  "repository": {
+    "jenkins-directives": {
+      "patterns": [
+        {
+          "name": "storage.type.jenkins.directive",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(pipeline|stages|stage|steps|post|environment|options|tools|parameters|triggers|when)\\b(?=\\s*\\{)"
+        },
+        {
+          "name": "storage.type.jenkins.directive",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*agent\\b(?=\\s*\\{)"
+        },
+        {
+          "name": "storage.type.jenkins.directive",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*agent\\b(?=\\s+(any|none)\\b)"
+        }
+      ]
+    },
+
+    "jenkins-post": {
+      "patterns": [
+        {
+          "name": "keyword.other.jenkins.postcondition",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(always|success|failure|unstable|changed|aborted|cleanup)\\b(?=\\s*\\{)"
+        }
+      ]
+    },
+
+    "jenkins-when": {
+      "patterns": [
+        {
+          "name": "keyword.other.jenkins.when",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(branch|environment|expression|buildingTag|changelog|changeset|equals|not|allOf|anyOf|tag|triggeredBy|beforeAgent|beforeInput|beforeOptions)\\b(?=\\s*(\\(|\\{))"
+        }
+      ]
+    },
+
+    "jenkins-parameters": {
+      "patterns": [
+        {
+          "name": "support.type.jenkins.parameter",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(string|booleanParam|choice|text|password|file|credentials)\\b(?=\\s*\\()"
+        }
+      ]
+    },
+
+    "jenkins-agent": {
+      "patterns": [
+        {
+          "name": "support.type.jenkins.agent",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(docker|dockerfile|label|node|kubernetes|container)\\b(?=\\s*(\\{|\\())"
+        }
+      ]
+    },
+
+    "jenkins-steps": {
+      "patterns": [
+        {
+          "name": "support.function.jenkins.step",
+          "match": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(sh|bat|powershell|echo|dir|deleteDir|checkout|git|archiveArtifacts|stash|unstash|timeout|retry|waitUntil|sleep|withEnv|withCredentials|input|build|error|catchError|milestone|parallel|script|load|readFile|writeFile|readJSON|writeJSON|readYaml|writeYaml|httpRequest|junit|ansiColor|tool|pwd|env|currentBuild)\\b(?=\\s*\\()"
+        }
+      ]
+    },
+
+    "jenkins-annotations": {
+      "patterns": [
+        {
+          "name": "meta.annotation.jenkins.library",
+          "match": "@Library\\([^)]*\\)"
+        }
+      ]
+    },
+
+    "jenkins-blocks": {
+      "patterns": [
+        {
+          "name": "meta.block.jenkins",
+          "begin": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(pipeline|stages|stage|steps|post|environment|options|tools|parameters|triggers|when|agent)\\b(?=\\s*\\{)",
+          "beginCaptures": {
+            "1": { "name": "storage.type.jenkins.directive" }
+          },
+          "end": "\\}",
+          "patterns": [
+            { "include": "source.groovy" },
+            { "include": "#jenkins-directives" },
+            { "include": "#jenkins-steps" },
+            { "include": "#jenkins-post" },
+            { "include": "#jenkins-when" },
+            { "include": "#jenkins-parameters" },
+            { "include": "#jenkins-agent" },
+            { "include": "#jenkins-annotations" }
+          ]
+        }
+      ]
+    }
+  }
+}
