@@ -75,7 +75,7 @@ To debug the extension itself:
 
 - Modify `server/src/server.ts` to add more LSP features
 - Update `client/syntaxes/groovy.tmLanguage.json` to improve syntax highlighting
-- Add more patterns to `client/language-configuration.json`
+- Add more patterns to `language-configuration.json`
 - Test with your own Groovy projects
 
 ## Packaging for Distribution

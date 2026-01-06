@@ -1,23 +1,104 @@
 {
   "name": "groovy-vscode-extension",
-  "version": "0.1.0",
-  "description": "Groovy Language Server and VSCode Extension",
+  "version": "1.0.0",
+  "description": "Full-featured Groovy language support for VS Code with Jenkins shared library support",
+  "publisher": "JulienTAHON",
+  "displayName": "Groovy Language Support",
+  "author": "Julien TAHON",
+  "license": "MIT",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djukxe/groovy-vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/djukxe/groovy-vscode-extension/issues"
+  },
+  "homepage": "https://github.com/djukxe/groovy-vscode-extension#readme",
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
   ],
+  "keywords": [
+    "groovy",
+    "language-server",
+    "jenkins",
+    "shared-library"
+  ],
+  "galleryBanner": {
+    "color": "#2D2D30",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "workspaceContains:**/*.groovy",
+    "workspaceContains:**/*.gvy",
+    "workspaceContains:**/*.gy",
+    "workspaceContains:**/*.gsh"
+  ],
+  "main": "./client/out/extension",
+  "contributes": {
+    "languages": [
+      {
+        "id": "groovy",
+        "aliases": [
+          "Groovy",
+          "groovy"
+        ],
+        "extensions": [
+          ".groovy",
+          ".gvy",
+          ".gy",
+          ".gsh"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "groovy",
+        "scopeName": "source.groovy",
+        "path": "./client/syntaxes/groovy.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Groovy Language Support",
+      "properties": {
+        "groovy.jenkins.sharedLibrary.varsPath": {
+          "type": "string",
+          "default": "vars",
+          "description": "Relative path to the Jenkins shared library vars directory (containing global functions)"
+        },
+        "groovy.jenkins.sharedLibrary.srcPath": {
+          "type": "string",
+          "default": "src",
+          "description": "Relative path to the Jenkins shared library src directory (containing classes and methods)"
+        }
+      }
+    }
+  },
   "scripts": {
-    "compile": "npm run compile --workspaces",
-    "watch": "npm run watch --workspaces",
-    "test": "npm test --workspaces",
-    "vscode:prepublish": "npm run compile"
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "test": "echo 'No tests for client'",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish",
+		"lint": "eslint",
+    "publish:minor": "vsce publish minor",
+    "publish:major": "vsce publish major",
+    "publish:patch": "vsce publish patch",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "ts-loader": "^9.5.4",
     "typescript": "^5.3.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "vscode": "^1.85.0"
   }
 }

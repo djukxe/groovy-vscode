@@ -59,7 +59,6 @@ groovy-vscode-extension/
 │   │   └── extension.ts       # Extension entry point
 │   ├── syntaxes/
 │   │   └── groovy.tmLanguage.json  # TextMate grammar
-│   ├── language-configuration.json
 │   └── package.json
 ├── server/                     # Language server
 │   ├── src/
@@ -68,13 +67,14 @@ groovy-vscode-extension/
 ├── .vscode/
 │   └── launch.json            # Debug configuration
 └── package.json               # Root package
+└── language-configuration.json               # Root package
 ```
 
 ### Building
 
 ```bash
 # Compile both client and server
-npm run compile
+npm run ci
 
 # Watch mode (auto-compile on changes)
 npm run watch
@@ -95,10 +95,8 @@ To debug both client and server:
 
 ### Implemented
 
-- ✅ Document synchronization
 - ✅ Code completion (keywords)
 - ✅ Go to Definition (classes, methods, properties, variables)
-- ✅ Document symbols (classes, methods, properties)
 - ✅ Hover information
 - ✅ Basic diagnostics (brace/parenthesis matching)
 - ✅ Syntax highlighting
@@ -106,30 +104,8 @@ To debug both client and server:
 ### Future Enhancements
 
 - Find References
-- Code formatting
 - Rename refactoring
-- Signature help
-- Integration with Groovy compiler for advanced diagnostics
 - Semantic tokens
-- Code actions and quick fixes
-- Cross-file Go to Definition
-
-## Example Usage
-
-Create a file `example.groovy`:
-
-```groovy
-class HelloWorld {
-    static void main(String[] args) {
-        def message = "Hello, Groovy!"
-        println message
-    }
-    
-    def greet(String name) {
-        return "Hello, ${name}!"
-    }
-}
-```
 
 The extension will provide:
 - Syntax highlighting for keywords, strings, and comments
@@ -208,11 +184,9 @@ Contributions are welcome! Feel free to:
 
 ## Changelog
 
-### 0.1.0 (Initial Release)
+### 1.0.0 (Initial Release)
 
-- Basic language server with LSP support
 - Syntax highlighting via TextMate grammar
-- Code completion for Groovy keywords
 - Go to Definition for classes, methods, properties, and variables
 - Document symbols (outline view)
 - Hover information for keywords
