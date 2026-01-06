@@ -2,11 +2,8 @@
 .vscode-test/**
 **/*.ts
 **/*.map
-src/
-vars/
 .gitignore
-QUICKSTART.md
-**/*.groovy
+groovy/
 **/tsconfig.tsbuildinfo
 **/tsconfig.json
 **/.eslintrc.json
