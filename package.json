@@ -1,20 +1,19 @@
 {
-  "name": "groovy-vscode-extension",
+  "name": "groovy-vscode",
   "version": "1.0.0",
   "description": "Full-featured Groovy language support for VS Code with Jenkins shared library support",
-  "publisher": "JulienTAHON",
+  "publisher": "Julien TAHON",
   "displayName": "Groovy Language Support",
   "author": "Julien TAHON",
-  "license": "MIT",
-  "private": true,
+  "license": "GPLv3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/djukxe/groovy-vscode-extension"
+    "url": "https://github.com/djukxe/groovy-vscode"
   },
   "bugs": {
-    "url": "https://github.com/djukxe/groovy-vscode-extension/issues"
+    "url": "https://github.com/djukxe/groovy-vscode/issues"
   },
-  "homepage": "https://github.com/djukxe/groovy-vscode-extension#readme",
+  "homepage": "https://github.com/djukxe/groovy-vscode#readme",
   "categories": [
     "Programming Languages"
   ],

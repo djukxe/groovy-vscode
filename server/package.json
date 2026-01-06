@@ -1,5 +1,5 @@
 {
-  "name": "groovy-vscode-extension-server",
+  "name": "groovy-vscode-server",
   "version": "0.1.0",
   "description": "Language Server for Groovy",
   "dependencies": {

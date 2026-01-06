@@ -53,7 +53,7 @@ This creates a `.vsix` file that can be installed in VSCode via:
 ### Project Structure
 
 ```
-groovy-vscode-extension/
+groovy-vscode/
 ├── client/                     # VSCode extension client
 │   ├── src/
 │   │   └── extension.ts       # Extension entry point

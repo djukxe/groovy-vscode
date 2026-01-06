@@ -1,5 +1,5 @@
 {
-  "name": "groovy-vscode-extension-client",
+  "name": "groovy-vscode-client",
   "version": "0.1.0",
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
