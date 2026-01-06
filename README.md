@@ -59,6 +59,7 @@ groovy-vscode-extension/
 │   │   └── extension.ts       # Extension entry point
 │   ├── syntaxes/
 │   │   └── groovy.tmLanguage.json  # TextMate grammar
+│   │   └── jenkins-pipeline.tmLanguage.json  # TextMate grammar for jenkins
 │   └── package.json
 ├── server/                     # Language server
 │   ├── src/
@@ -66,8 +67,8 @@ groovy-vscode-extension/
 │   └── package.json
 ├── .vscode/
 │   └── launch.json            # Debug configuration
-└── package.json               # Root package
 └── language-configuration.json               # Root package
+└── package.json               # Root package
 ```
 
 ### Building
@@ -95,7 +96,6 @@ To debug both client and server:
 
 - Find References
 - Rename refactoring
-- Semantic tokens
 
 ### Testing the Extension
 
@@ -106,12 +106,12 @@ Before publishing, test the packaged extension:
    - Extensions panel → `...` menu → Install from VSIX
    - Select the generated `.vsix` file
 
-2. Test all features with `.groovy` files
+2. Test all features with `.groovy` files. Some files can be found in `groovy/`folder
 
 ## Requirements
 
-- Node.js 18.0 or higher
-- VSCode 1.85.0 or higher
+- Node.js 24.0 or higher
+- VSCode 1.107.0 or higher
 
 ## License
 
