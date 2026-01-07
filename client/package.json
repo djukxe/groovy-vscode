@@ -1,6 +1,7 @@
 {
   "name": "groovy-vscode-client",
   "version": "0.1.0",
+  "publisher": "JulienTAHON",
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
   },
