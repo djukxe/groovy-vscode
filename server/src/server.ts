@@ -402,7 +402,9 @@ function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]
 
         if (stat.isDirectory()) {
           const result = searchDirectory(itemPath);
-          if (result) return result;
+          if (result) {
+            return result
+          };
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
           const signature = findMethodSignature(content, symbol, args);
@@ -841,7 +843,9 @@ function findClassOrMethodDefinitionInSrcWithSignature(srcDir: string, symbol: s
 
         if (stat.isDirectory()) {
           const result = searchDirectory(itemPath);
-          if (result) return result;
+          if (result) {
+            return result
+          };
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
           // First try to find class definition
@@ -916,7 +920,9 @@ function findClassOrMethodDefinitionInSrc(srcDir: string, symbol: string): Locat
 
         if (stat.isDirectory()) {
           const result = searchDirectory(itemPath);
-          if (result) return result;
+          if (result) {
+            return result
+          };
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
           // First try to find class definition
