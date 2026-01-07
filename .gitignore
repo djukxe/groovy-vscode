@@ -7,3 +7,4 @@ client/server/
 .DS_Store
 *.log
 tsconfig.tsbuildinfo
+coverage
