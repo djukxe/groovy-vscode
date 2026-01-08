@@ -62,21 +62,16 @@ This creates a `.vsix` file that can be installed in VSCode via:
 
 ```
 groovy-vscode/
-├── client/                     # VSCode extension client
-│   ├── src/
-│   │   └── extension.ts       # Extension entry point
-│   ├── syntaxes/
-│   │   └── groovy.tmLanguage.json  # TextMate grammar
-│   │   └── jenkins-pipeline.tmLanguage.json  # TextMate grammar for jenkins
-│   └── package.json
-├── server/                     # Language server
-│   ├── src/
-│   │   └── server.ts          # LSP implementation
-│   └── package.json
-├── .vscode/
-│   └── launch.json            # Debug configuration
-└── language-configuration.json               # Root package
-└── package.json               # Root package
+├── client
+│   ├── src
+│   │   └── extension.ts
+│   └── syntaxes
+└── server
+    └── src
+        ├── server.ts
+        ├── test
+        │   └── languageServer.test.ts
+        └── utils.ts
 ```
 
 ### Building
@@ -123,7 +118,7 @@ Before publishing, test the packaged extension:
 
 ## License
 
-MIT
+GPLv3
 
 ## Contributing
 
