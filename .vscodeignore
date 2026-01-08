@@ -6,7 +6,7 @@
 groovy/
 **/tsconfig.tsbuildinfo
 **/tsconfig.json
-**/.eslintrc.json
+**/eslint.config.mjs
 **/jest.config.js
 server/test/**
 .jscpd.json
