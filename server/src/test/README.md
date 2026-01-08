@@ -16,11 +16,6 @@ Tests the core utility functions that power the language server:
   - Parses method parameter strings into arrays
   - Handles default values and complex types
 
-- **Function Signature Finding**: Tests for `findFunctionSignature()` function
-  - Finds function definitions in Groovy code
-  - Handles overloaded functions correctly
-  - Prefers Map signatures for map arguments
-
 - **Method Signature Finding**: Tests for `findMethodSignature()` function
   - Finds method definitions in classes
   - Handles static and instance methods

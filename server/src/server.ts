@@ -31,7 +31,6 @@ import {
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParen,
-  findFunctionSignature,
   findMethodSignature
 } from './utils';
 
@@ -250,7 +249,7 @@ connection.onHover((params: HoverParams): Hover | null => {
     }
 
     // If no exact signature match, try Jenkins shared libraries
-    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibrary(symbol, args);
+    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibraryForHover(symbol, args);
     if (sharedLibSignature) {
       return {
         contents: {
@@ -340,7 +339,7 @@ function findFunctionSignatureForHover(document: TextDocument, text: string, sym
   return null;
 }
 
-function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: string[]): string | null {
+function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, args: string[]): string | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
@@ -360,13 +359,13 @@ function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: strin
             const fileNameWithoutExt = file.replace('.groovy', '');
             if (fileNameWithoutExt === symbol) {
               // If the symbol matches the filename, look for the 'call' function with matching signature
-              const signature = findFunctionSignature(content, 'call', args);
+              const signature = findMethodSignature(content, 'call', args);
               if (signature) {
                 return formatSignature(`${fileNameWithoutExt}.call`, signature);
               }
             } else {
               // Otherwise, look for a function with the exact symbol name and matching signature
-              const signature = findFunctionSignature(content, symbol, args);
+              const signature = findMethodSignature(content, symbol, args);
               if (signature) {
                 return formatSignature(symbol, signature);
               }
