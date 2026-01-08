@@ -10,3 +10,6 @@ tsconfig.tsbuildinfo
 coverage
 
 megalinter-reports/
+
+# jscpd reports
+report/
