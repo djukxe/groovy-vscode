@@ -129,6 +129,13 @@ Contributions are welcome! Feel free to:
 
 ## Changelog
 
+### 1.0.1
+
+- Various maintenance (integration with github actions and megalinter)
+- Remove code duplication, cleanup
+- bump some dependencies
+- Add icon
+
 ### 1.0.0 (Initial Release)
 
 - Syntax highlighting via TextMate grammar
