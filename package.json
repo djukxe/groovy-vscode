@@ -6,6 +6,7 @@
   "displayName": "Groovy Language Support",
   "author": "Julien TAHON",
   "license": "GPLv3",
+  "icon": "icons/groovy-jenkins.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/djukxe/groovy-vscode"
