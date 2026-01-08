@@ -61,31 +61,29 @@ def deployTo(String environment) {
 }
 `;
 
-  describe('findMethodSignature', () => {
-    test('finds function with default parameter for zero args', () => {
-      const result = findMethodSignature(testGroovyCode, 'call', []);
-      expect(result).toBe('def call(String message = "Hello from shared library!")');
-    });
+  test('finds function with default parameter for zero args', () => {
+    const result = findMethodSignature(testGroovyCode, 'call', []);
+    expect(result).toBe('def call(String message = "Hello from shared library!")');
+  });
 
-    test('finds function with default parameter for one arg', () => {
-      const result = findMethodSignature(testGroovyCode, 'call', ['arg']);
-      expect(result).toBe('def call(String message = "Hello from shared library!")');
-    });
+  test('finds function with default parameter for one arg', () => {
+    const result = findMethodSignature(testGroovyCode, 'call', ['arg']);
+    expect(result).toBe('def call(String message = "Hello from shared library!")');
+  });
 
-    test('prefers Map function for map arguments', () => {
-      const result = findMethodSignature(testGroovyCode, 'call', ['[key: value]']);
-      expect(result).toBe('def call(Map config)');
-    });
+  test('prefers Map function for map arguments', () => {
+    const result = findMethodSignature(testGroovyCode, 'call', ['[key: value]']);
+    expect(result).toBe('def call(Map config)');
+  });
 
-    test('finds specific function when only one matches', () => {
-      const result = findMethodSignature(testGroovyCode, 'deployTo', ['env']);
-      expect(result).toBe('def deployTo(String environment)');
-    });
+  test('finds specific function when only one matches', () => {
+    const result = findMethodSignature(testGroovyCode, 'deployTo', ['env']);
+    expect(result).toBe('def deployTo(String environment)');
+  });
 
-    test('returns null when no function matches', () => {
-      const result = findMethodSignature(testGroovyCode, 'nonexistent', []);
-      expect(result).toBeNull();
-    });
+  test('returns null when no function matches', () => {
+    const result = findMethodSignature(testGroovyCode, 'nonexistent', []);
+    expect(result).toBeNull();
   });
 });
 
@@ -106,20 +104,18 @@ class TestClass {
 }
 `;
 
-  describe('findMethodSignature', () => {
-    test('finds method with matching parameters', () => {
-      const result = findMethodSignature(testClassCode, 'method', ['param']);
-      expect(result).toBe('def method(String param)');
-    });
+  test('finds method with matching parameters', () => {
+    const result = findMethodSignature(testClassCode, 'method', ['param']);
+    expect(result).toBe('def method(String param)');
+  });
 
-    test('prefers Map method for map arguments', () => {
-      const result = findMethodSignature(testClassCode, 'method', ['[key: value]']);
-      expect(result).toBe('def method(Map config)');
-    });
+  test('prefers Map method for map arguments', () => {
+    const result = findMethodSignature(testClassCode, 'method', ['[key: value]']);
+    expect(result).toBe('def method(Map config)');
+  });
 
-    test('finds static method with default parameter', () => {
-      const result = findMethodSignature(testClassCode, 'staticMethod', []);
-      expect(result).toBe('static void staticMethod(String arg = "default")');
-    });
+  test('finds static method with default parameter', () => {
+    const result = findMethodSignature(testClassCode, 'staticMethod', []);
+    expect(result).toBe('static void staticMethod(String arg = "default")');
   });
 });
