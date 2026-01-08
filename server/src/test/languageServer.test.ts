@@ -1,4 +1,4 @@
-import { matchesParameterCount, parseMethodParameters, findFunctionSignature, findMethodSignature } from '../src/utils';
+import { matchesParameterCount, parseMethodParameters, findFunctionSignature, findMethodSignature } from '../utils';
 
 describe('Parameter Matching', () => {
   describe('matchesParameterCount', () => {

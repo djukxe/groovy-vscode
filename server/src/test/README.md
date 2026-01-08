@@ -36,7 +36,7 @@ npm test
 npm run test:watch
 
 # Run tests with coverage
-npm test -- --coverage
+npm run test:coverage
 ```
 
 ## Test Coverage
