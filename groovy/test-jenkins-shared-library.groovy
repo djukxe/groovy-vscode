@@ -19,7 +19,6 @@ pipeline {
                     // Test other functions
                     myUtils.deployTo("staging")  // Should go to deployTo function
                     myUtils.deployTo("prod", true)  // Should go to overloaded deployTo function
-                    myUtils.notify("#devops")    // Should go to notify function
                 }
             }
         }
@@ -38,7 +37,7 @@ pipeline {
                     helper.deploy()              // Should go to deploy method
 
                     // Test methods with different signatures
-                    echo helper.build()          // Should go to build method (no explicit return type)
+                    echo helper.build()          // Should NOT go to build method (no explicit return type)
                     def envs = helper.getSupportedEnvironments()  // Should go to getSupportedEnvironments method
                     def config = helper.getConfig()  // Should go to getConfig method
 

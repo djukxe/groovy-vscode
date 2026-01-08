@@ -8,3 +8,8 @@ client/server/
 *.log
 tsconfig.tsbuildinfo
 coverage
+
+megalinter-reports/
+
+# jscpd reports
+report/

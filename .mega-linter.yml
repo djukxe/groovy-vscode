@@ -1,0 +1,18 @@
+# Configuration file for MegaLinter
+#
+# See all available variables at https://megalinter.io/latest/config-file/ and in
+# linters documentation
+
+# all, none, or list of linter keys
+APPLY_FIXES: none
+
+DISABLE_LINTERS:
+  - JAVASCRIPT_STANDARD
+  - JSON_PRETTIER
+  - MARKDOWN_MARKDOWNLINT
+  - REPOSITORY_CHECKOV
+  - SPELL_CSPELL
+  - SPELL_LYCHEE
+  - TYPESCRIPT_STANDARD
+  - YAML_PRETTIER
+SHOW_ELAPSED_TIME: true

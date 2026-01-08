@@ -18,8 +18,3 @@ def deployTo(String environment, boolean dryRun) {
         deployTo(environment)
     }
 }
-
-notify(String channel = "#general") {
-    echo "Notifying ${channel}"
-    // Notification logic here
-}
