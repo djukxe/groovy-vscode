@@ -11,9 +11,6 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-  ],
+  collectCoverageFrom: [ 'server/src/**/*.ts' ],
   moduleFileExtensions: ['ts', 'js', 'json'],
 };
