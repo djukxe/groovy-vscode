@@ -250,7 +250,7 @@ connection.onHover((params: HoverParams): Hover | null => {
     }
 
     // If no exact signature match, try Jenkins shared libraries
-    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibrary(symbol, args);
+    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibraryForHover(symbol, args);
     if (sharedLibSignature) {
       return {
         contents: {
@@ -340,7 +340,7 @@ function findFunctionSignatureForHover(document: TextDocument, text: string, sym
   return null;
 }
 
-function findFunctionSignatureInJenkinsSharedLibrary(symbol: string, args: string[]): string | null {
+function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, args: string[]): string | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
