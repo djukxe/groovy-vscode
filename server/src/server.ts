@@ -31,7 +31,6 @@ import {
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParen,
-  findFunctionSignature,
   findMethodSignature
 } from './utils';
 
@@ -360,13 +359,13 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
             const fileNameWithoutExt = file.replace('.groovy', '');
             if (fileNameWithoutExt === symbol) {
               // If the symbol matches the filename, look for the 'call' function with matching signature
-              const signature = findFunctionSignature(content, 'call', args);
+              const signature = findMethodSignature(content, 'call', args);
               if (signature) {
                 return formatSignature(`${fileNameWithoutExt}.call`, signature);
               }
             } else {
               // Otherwise, look for a function with the exact symbol name and matching signature
-              const signature = findFunctionSignature(content, symbol, args);
+              const signature = findMethodSignature(content, symbol, args);
               if (signature) {
                 return formatSignature(symbol, signature);
               }

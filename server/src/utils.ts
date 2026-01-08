@@ -84,60 +84,6 @@ export function findMatchingParen(text: string, openParenPos: number): number {
   return -1;
 }
 
-export function findFunctionSignature(text: string, symbol: string, args: string[]): string | null {
-  const functionPatterns = [
-    // Standard function definition with def
-    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g'),
-    // Function without def keyword (direct function definition)
-    new RegExp(`(?:^|\\n)\\s*${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g')
-  ];
-
-  const matchingSignatures: string[] = [];
-
-  for (const functionRegex of functionPatterns) {
-    let match;
-    while ((match = functionRegex.exec(text)) !== null) {
-      // Find the opening paren position
-      const openParenIndex = match[0].indexOf('(');
-      const paramStart = match.index + openParenIndex;
-      const paramEnd = findMatchingParen(text, paramStart);
-      if (paramEnd !== -1) {
-        const paramList = text.substring(paramStart + 1, paramEnd);
-        const expectedParams = parseMethodParameters(paramList);
-
-        // Check if parameter count matches (considering default parameters)
-        if (matchesParameterCount(expectedParams, args.length)) {
-          // Return the full signature (up to closing paren)
-          const signatureStart = match.index;
-          const signatureEnd = paramEnd + 1; // Include closing parenthesis
-          const signature = text.substring(signatureStart, signatureEnd).trim();
-          matchingSignatures.push(signature);
-        }
-      }
-    }
-  }
-
-  if (matchingSignatures.length === 0) {
-    return null;
-  }
-
-  if (matchingSignatures.length === 1) {
-    return matchingSignatures[0];
-  }
-
-  // Multiple matches - try to choose the best one
-  // For map arguments, prefer Map parameters over other types
-  if (args.length === 1 && args[0].startsWith('[') && args[0].endsWith(']')) {
-    const mapSignature = matchingSignatures.find(sig => sig.includes('Map '));
-    if (mapSignature) {
-      return mapSignature;
-    }
-  }
-
-  // Otherwise, return the first one (maintains backward compatibility)
-  return matchingSignatures[0];
-}
-
 export function findMethodSignature(text: string, symbol: string, args: string[]): string | null {
   const methodPatterns = [
     // Standard method with return type
