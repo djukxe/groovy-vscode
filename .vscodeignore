@@ -9,6 +9,7 @@ groovy/
 **/.eslintrc.json
 **/jest.config.js
 server/test/**
+coverage/**
 client/node_modules/**
 !client/node_modules/vscode-jsonrpc/**
 !client/node_modules/vscode-languageclient/**

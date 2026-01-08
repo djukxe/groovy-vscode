@@ -98,6 +98,7 @@
     "compile": "tsc -b",
     "watch": "tsc -b -w",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish",
