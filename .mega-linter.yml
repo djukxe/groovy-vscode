@@ -8,7 +8,8 @@ APPLY_FIXES: none
 
 # If you use ENABLE variable, all other languages/formats/tooling-formats will
 # be disabled by default
-# ENABLE:
+ENABLE:
+  - COPYPASTE # Uncomment to disable checks of excessive copy-pastes
 
 # If you use ENABLE_LINTERS variable, all other linters will be disabled by
 # default
