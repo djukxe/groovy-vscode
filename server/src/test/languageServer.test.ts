@@ -1,4 +1,4 @@
-import { matchesParameterCount, parseMethodParameters, findFunctionSignature, findMethodSignature } from '../utils';
+import { matchesParameterCount, parseMethodParameters, findMethodSignature } from '../utils';
 
 describe('Parameter Matching', () => {
   describe('matchesParameterCount', () => {
@@ -46,7 +46,7 @@ describe('Parameter Matching', () => {
   });
 });
 
-describe('Function Signature Finding', () => {
+describe('Method Signature Finding (in Jenkins shared library global vars)', () => {
   const testGroovyCode = `
 def call(String message = "Hello from shared library!") {
     echo message
@@ -61,35 +61,35 @@ def deployTo(String environment) {
 }
 `;
 
-  describe('findFunctionSignature', () => {
+  describe('findMethodSignature', () => {
     test('finds function with default parameter for zero args', () => {
-      const result = findFunctionSignature(testGroovyCode, 'call', []);
+      const result = findMethodSignature(testGroovyCode, 'call', []);
       expect(result).toBe('def call(String message = "Hello from shared library!")');
     });
 
     test('finds function with default parameter for one arg', () => {
-      const result = findFunctionSignature(testGroovyCode, 'call', ['arg']);
+      const result = findMethodSignature(testGroovyCode, 'call', ['arg']);
       expect(result).toBe('def call(String message = "Hello from shared library!")');
     });
 
     test('prefers Map function for map arguments', () => {
-      const result = findFunctionSignature(testGroovyCode, 'call', ['[key: value]']);
+      const result = findMethodSignature(testGroovyCode, 'call', ['[key: value]']);
       expect(result).toBe('def call(Map config)');
     });
 
     test('finds specific function when only one matches', () => {
-      const result = findFunctionSignature(testGroovyCode, 'deployTo', ['env']);
+      const result = findMethodSignature(testGroovyCode, 'deployTo', ['env']);
       expect(result).toBe('def deployTo(String environment)');
     });
 
     test('returns null when no function matches', () => {
-      const result = findFunctionSignature(testGroovyCode, 'nonexistent', []);
+      const result = findMethodSignature(testGroovyCode, 'nonexistent', []);
       expect(result).toBeNull();
     });
   });
 });
 
-describe('Method Signature Finding', () => {
+describe('Method Signature Finding (in class context)', () => {
   const testClassCode = `
 class TestClass {
     def method(String param) {
