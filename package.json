@@ -1,11 +1,12 @@
 {
   "name": "groovy-vscode",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Full-featured Groovy language support for VS Code with Jenkins shared library support",
   "publisher": "JulienTAHON",
   "displayName": "Groovy Language Support",
   "author": "Julien TAHON",
   "license": "GPLv3",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/djukxe/groovy-vscode"
@@ -22,10 +23,6 @@
     "jenkins",
     "shared-library"
   ],
-  "galleryBanner": {
-    "color": "#2D2D30",
-    "theme": "dark"
-  },
   "activationEvents": [
     "workspaceContains:**/*.groovy",
     "workspaceContains:**/*.gvy",
