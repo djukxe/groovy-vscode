@@ -22,11 +22,6 @@ class JenkinsHelper {
         return true
     }
 
-    // Method with different signature - no explicit return type
-    build() {
-        return "Building ${projectName}"
-    }
-
     // Method with complex return type
     List<String> getSupportedEnvironments() {
         return ["dev", "staging", "prod"]
