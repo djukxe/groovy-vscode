@@ -104,6 +104,7 @@
     "publish": "vsce publish",
     "lint": "eslint --ext ts client/src server/src",
     "lint:fix": "eslint --ext ts --fix client/src server/src",
+    "find-duplicates": "jscpd server/src client/src",
     "publish:minor": "vsce publish minor",
     "publish:major": "vsce publish major",
     "publish:patch": "vsce publish patch",
@@ -116,6 +117,7 @@
     "@types/vscode": "^1.107.0",
     "eslint": "^9.39.2",
     "jest": "^30.2.0",
+    "jscpd": "^4.0.5",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.52.0"
