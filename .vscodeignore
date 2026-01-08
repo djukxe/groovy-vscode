@@ -11,6 +11,8 @@ groovy/
 server/test/**
 .jscpd.json
 report
+.mega-linter.yml
+megalinter-reports
 coverage/**
 client/node_modules/**
 !client/node_modules/vscode-jsonrpc/**
