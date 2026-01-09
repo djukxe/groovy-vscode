@@ -2,6 +2,7 @@
 
 [![Visual Studio Marketplace Version (including pre-releases)](https://img.shields.io/visual-studio-marketplace/v/JulienTAHON.groovy-vscode)](https://marketplace.visualstudio.com/items?itemName=JulienTAHON.groovy-vscode)
 [![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/JulienTAHON.groovy-vscode)](https://marketplace.visualstudio.com/items?itemName=JulienTAHON.groovy-vscode)
+[![codecov](https://codecov.io/gh/djukxe/groovy-vscode/branch/main/graph/badge.svg)](https://codecov.io/gh/djukxe/groovy-vscode)
 [![Test](https://github.com/djukxe/groovy-vscode/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/djukxe/groovy-vscode/actions/workflows/test.yml)
 [![Mega-Linter](https://github.com/djukxe/groovy-vscode/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/djukxe/groovy-vscode/actions/workflows/mega-linter.yml)
 [![License](https://img.shields.io/github/license/djukxe/groovy-vscode.png)](https://github.com/djukxe/groovy-vscode/blob/master/LICENSE)
