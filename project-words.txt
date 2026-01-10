@@ -2,3 +2,9 @@
 println
 TAHON
 unstash
+groovylintrc
+hardis
+minimatch
+stefanzweifel
+venv
+yallist

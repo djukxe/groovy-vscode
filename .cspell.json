@@ -8,6 +8,17 @@
             "addWords": true
         }
     ],
-    "dictionaries": ["project-words"],
-    "ignorePaths": ["node_modules", "report", "coverage", "**/*.tsbuildinfo", "/project-words.txt"]
+    "dictionaries": [
+        "project-words"
+    ],
+    "ignorePaths": [
+        "node_modules",
+        "report",
+        "coverage",
+        "**/*.tsbuildinfo",
+        "/project-words.txt",
+        "**/vscode-extension/**",
+        "**/.git/**",
+        ".vscode"
+    ]
 }
