@@ -8,3 +8,4 @@ minimatch
 stefanzweifel
 venv
 yallist
+vscodeignore
