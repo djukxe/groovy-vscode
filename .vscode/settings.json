@@ -1,4 +1,4 @@
 {
-    "groovy.jenkins.sharedLibrary.srcPath": "groovy/src",
-    "groovy.jenkins.sharedLibrary.varsPath": "groovy/vars"
+  "groovy.jenkins.sharedLibrary.srcPath": "groovy/src",
+  "groovy.jenkins.sharedLibrary.varsPath": "groovy/vars"
 }
