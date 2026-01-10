@@ -34,11 +34,13 @@ A Visual Studio Code extension that provides Language Server Protocol (LSP) supp
 
 1. Clone or navigate to this repository
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Compile the extension:
+
    ```bash
    npm run compile
    ```
@@ -61,7 +63,7 @@ This creates a `.vsix` file that can be installed in VSCode via:
 
 ### Project Structure
 
-```
+```text
 groovy-vscode/
 ├── client
 │   ├── src

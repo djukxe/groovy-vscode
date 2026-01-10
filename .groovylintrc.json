@@ -1,25 +1,25 @@
 {
-    "extends": "recommended-jenkinsfile",
-    "rules": {
-        "ClassJavadoc": {
-            "enabled": false
-        },
-        "CouldBeElvis": "off",
-        "CouldBeSwitchStatement": "off",
-        "GStringAsMapKey": {
-            "enabled": false
-        },
-        "IfStatementBraces": {
-            "enabled": false
-        },
-        "LineLength": {
-            "enabled": false
-        },
-        "ParameterCount": {
-            "enabled": false
-        },
-        "UnusedVariable": {
-            "enabled": false
-        }
+  "extends": "recommended-jenkinsfile",
+  "rules": {
+    "ClassJavadoc": {
+      "enabled": false
+    },
+    "CouldBeElvis": "off",
+    "CouldBeSwitchStatement": "off",
+    "GStringAsMapKey": {
+      "enabled": false
+    },
+    "IfStatementBraces": {
+      "enabled": false
+    },
+    "LineLength": {
+      "enabled": false
+    },
+    "ParameterCount": {
+      "enabled": false
+    },
+    "UnusedVariable": {
+      "enabled": false
     }
+  }
 }

@@ -1,7 +1,3 @@
-const { createDefaultPreset } = require("ts-jest");
-
-const tsJestTransformCfg = createDefaultPreset().transform;
-
 /** @type {import("jest").Config} **/
 module.exports = {
   preset: 'ts-jest',
@@ -9,8 +5,8 @@ module.exports = {
   roots: ['<rootDir>/server/src', '<rootDir>/server/src/test'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': 'ts-jest'
   },
-  collectCoverageFrom: [ 'server/src/**/*.ts' ],
-  moduleFileExtensions: ['ts', 'js', 'json'],
-};
+  collectCoverageFrom: ['server/src/**/*.ts'],
+  moduleFileExtensions: ['ts', 'js', 'json']
+}
