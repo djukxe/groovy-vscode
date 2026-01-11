@@ -88,8 +88,6 @@ export function findMethodSignature(text: string, symbol: string, args: string[]
   const methodPatterns = [
     // Standard method with return type
     new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g'),
-    // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\([^)]*\\)\\s*\\{`, 'g')
   ];
 
   const matchingSignatures: string[] = [];
