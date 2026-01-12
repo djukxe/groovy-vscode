@@ -644,9 +644,7 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
 function findMethodDefinitionWithSignature(text: string, symbol: string, args: string[]): Location | null {
   const methodPatterns = [
     // Standard method with return type
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
-    // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g')
   ];
 
   for (const methodRegex of methodPatterns) {
