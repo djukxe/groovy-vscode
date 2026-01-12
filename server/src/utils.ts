@@ -192,3 +192,19 @@ export function findMethodSignature(text: string, symbol: string, args: string[]
   // Otherwise, return the first one (maintains backward compatibility)
   return matchingSignatures[0];
 }
+
+export function findSymbolInfo(text: string, symbol: string): string | null {
+  // Check if it's a class
+  const classRegex = new RegExp(`class\\s+${symbol}\\s*(?:extends|implements|\\{)`, 'g');
+  if (classRegex.test(text)) {
+    return `**Class**: ${symbol}`;
+  }
+
+  // Check if it's a method
+  const methodRegex = new RegExp(`(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
+  if (methodRegex.test(text)) {
+    return `**Method**: ${symbol}`;
+  }
+
+  return null;
+}

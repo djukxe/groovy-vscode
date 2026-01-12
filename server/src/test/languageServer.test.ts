@@ -1,4 +1,4 @@
-import { matchesParameterCount, parseMethodParameters, findMethodSignature } from '../utils';
+import { matchesParameterCount, parseMethodParameters, findMethodSignature, findSymbolInfo } from '../utils';
 
 describe('Parameter Matching', () => {
   describe('matchesParameterCount', () => {
@@ -119,3 +119,63 @@ class TestClass {
     expect(result).toBe('static void staticMethod(String arg = "default")');
   });
 });
+
+describe('findSymbolInfo', () => {
+  test('returns Class info when the symbol is a class', () => {
+    const text = `
+      class MyService {
+        void doSomething() {}
+      }
+    `;
+
+    const result = findSymbolInfo(text, 'MyService');
+    expect(result).toBe('**Class**: MyService');
+  });
+
+  test('returns Method info when the symbol is a method', () => {
+    const text = `
+      class MyService {
+        public void doSomething() {}
+      }
+    `;
+
+    const result = findSymbolInfo(text, 'doSomething');
+    expect(result).toBe('**Method**: doSomething');
+  });
+
+  test('detects Groovy-style methods using def', () => {
+    const text = `
+      class MyService {
+        def runTask() {
+          println "Running"
+        }
+      }
+    `;
+
+    const result = findSymbolInfo(text, 'runTask');
+    expect(result).toBe('**Method**: runTask');
+  });
+
+  test('returns null when the symbol is not found', () => {
+    const text = `
+      class MyService {
+        void doSomething() {}
+      }
+    `;
+
+    const result = findSymbolInfo(text, 'unknownSymbol');
+    expect(result).toBeNull();
+  });
+
+  test('prioritizes class over method when both could match', () => {
+    const text = `
+      class Service {
+        void Service() {}
+      }
+    `;
+
+    const result = findSymbolInfo(text, 'Service');
+    expect(result).toBe('**Class**: Service');
+  });
+});
+

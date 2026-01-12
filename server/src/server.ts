@@ -31,7 +31,8 @@ import {
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParen,
-  findMethodSignature
+  findMethodSignature,
+  findSymbolInfo
 } from './utils';
 
 // Create a connection for the server
@@ -426,23 +427,6 @@ function formatSignature(symbol: string, signature: string): string {
   const cleanSignature = signature.replace(/\s+/g, ' ').trim();
 
   return `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
-}
-
-function findSymbolInfo(text: string, symbol: string): string | null {
-  // Check if it's a class
-  const classRegex = new RegExp(`class\\s+${symbol}\\s*(?:extends|implements|\\{)`, 'g');
-  if (classRegex.test(text)) {
-    return `**Class**: ${symbol}`;
-  }
-
-  // Check if it's a method
-  // should match access modifiers
-  const methodRegex = new RegExp(`(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
-  if (methodRegex.test(text)) {
-    return `**Method**: ${symbol}`;
-  }
-
-  return null;
 }
 
 // Code completion
