@@ -436,7 +436,8 @@ function findSymbolInfo(text: string, symbol: string): string | null {
   }
 
   // Check if it's a method
-  const methodRegex = new RegExp(`(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
+  // should match access modifiers
+  const methodRegex = new RegExp(`(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+)\\s+${symbol}\\s*\\(`, 'g');
   if (methodRegex.test(text)) {
     return `**Method**: ${symbol}`;
   }
