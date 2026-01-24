@@ -1,4 +1,5 @@
 name: Create GitHub Release
+# checkov:skip=CKV_GHA_7: Release workflow requires tag input for manual releases
 
 on:
   push:
