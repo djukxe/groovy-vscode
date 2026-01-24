@@ -9,3 +9,4 @@ stefanzweifel
 venv
 yallist
 vscodeignore
+softprops
