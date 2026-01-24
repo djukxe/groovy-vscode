@@ -3,10 +3,10 @@ name: Create GitHub Release
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger on version tags like v1.0.1
+      - "v*.*.*" # Trigger on version tags like v1.0.1
 
 permissions:
-  contents: write  # Needed to create releases
+  contents: write # Needed to create releases
 
 jobs:
   release:
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for release notes
+          fetch-depth: 0 # Fetch full history for release notes
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
