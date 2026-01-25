@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/djukxe/groovy-vscode.png?label=Star&maxAge=2592000)](https://github.com/djukxe/groovy-vscode/stargazers/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.png?style=flat-square)](https://makeapullrequest.com)
 
-A Visual Studio Code extension that provides Language Server Protocol (LSP) support for Groovy, enabling rich language features like syntax highlighting, code completion, diagnostics, and more.
+A [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=JulienTAHON.groovy-vscode) that provides Language Server Protocol (LSP) support for Groovy, enabling rich language features like syntax highlighting, code completion, diagnostics, and more.
 
 ## Features
 
@@ -21,12 +21,20 @@ A Visual Studio Code extension that provides Language Server Protocol (LSP) supp
 - **Hover Information**: Display documentation for keywords and symbols
 - **Language Configuration**: Auto-closing brackets, comment toggling, and proper indentation
 
+## Extension Settings
+
+| Setting                               | Description                                                                                | Default |
+|---------------------------------------|--------------------------------------------------------------------------------------------|---------|
+| groovy.jenkins.sharedLibrary.srcPath  | Relative path to the Jenkins shared library src directory (containing classes and methods) | src     |
+| groovy.jenkins.sharedLibrary.varsPath | Relative path to the Jenkins shared library vars directory (containing global functions)   | vars    |
+
 ## Supported File Extensions
 
 - `.groovy` - Standard Groovy files
 - `.gvy` - Groovy script files
 - `.gy` - Groovy files
 - `.gsh` - Groovy shell scripts
+- `Jenkinsfile, .jenkins, .pipeline` - Jenkins scripts
 
 ## Installation
 
@@ -64,11 +72,13 @@ This creates a `.vsix` file that can be installed in VSCode via:
 ### Project Structure
 
 ```text
-groovy-vscode/
+groovy-vscode
 ├── client
 │   ├── src
 │   │   └── extension.ts
 │   └── syntaxes
+│       ├── groovy.tmLanguage.json
+│       └── jenkins-pipeline.tmLanguage.json
 └── server
     └── src
         ├── server.ts
@@ -113,11 +123,6 @@ Before publishing, test the packaged extension:
    - Select the generated `.vsix` file
 
 2. Test all features with `.groovy` files. Some files can be found in `groovy/`folder
-
-## Requirements
-
-- Node.js 24.0 or higher
-- VSCode 1.107.0 or higher
 
 ## License
 
