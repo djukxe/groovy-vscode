@@ -1,3 +1,4 @@
+---
 name: Publish VSCode Extension
 # checkov:skip=CKV_GHA_7: Release workflow requires tag input for manual releases
 on:
