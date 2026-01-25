@@ -3,7 +3,12 @@ on:
   push:
     tags:
       - "v*.*.*"
-      
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g., v1.0.0)"
+        required: true
+        type: string
 jobs:
   deploy:
     runs-on: ubuntu-latest
