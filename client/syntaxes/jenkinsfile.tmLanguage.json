@@ -88,20 +88,14 @@
     "jenkins-blocks": {
       "patterns": [
         {
-          "name": "meta.block.jenkins",
-          "begin": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(pipeline|stages|stage|steps|post|environment|options|tools|parameters|triggers|when|agent)\\b(?=\\s*\\{)",
+          "name": "meta.block.jenkins.script",
+          "begin": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(script)\\b(?=\\s*\\{)",
           "beginCaptures": {
-            "1": { "name": "storage.type.jenkins.directive" }
+            "1": { "name": "storage.type.jenkins.script" }
           },
           "end": "\\}",
           "patterns": [
-            { "include": "#jenkins-directives" },
-            { "include": "#jenkins-steps" },
-            { "include": "#jenkins-post" },
-            { "include": "#jenkins-when" },
-            { "include": "#jenkins-parameters" },
-            { "include": "#jenkins-agent" },
-            { "include": "#jenkins-annotations" }
+            { "include": "source.groovy" }
           ]
         }
       ]
