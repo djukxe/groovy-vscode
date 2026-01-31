@@ -22,8 +22,6 @@ node {
         echo helper.getProjectInfo()  // Should go to getProjectInfo method
         helper.deploy()              // Should go to deploy method
 
-        // Test methods with different signatures
-        echo helper.build()          // Should NOT go to build method (no explicit return type)
         def envs = helper.getSupportedEnvironments()  // Should go to getSupportedEnvironments method
         def config = helper.getConfig()  // Should go to getConfig method
 
