@@ -6,12 +6,11 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}/client"],
-      "outFiles": ["${workspaceFolder}/client/out/**/*.js"],
-      "preLaunchTask": {
-        "type": "npm",
-        "script": "watch"
-      }
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}/groovy/"
+      ],
+      "outFiles": ["${workspaceFolder}/client/out/**/*.js"]
     },
     {
       "name": "Attach to Server",

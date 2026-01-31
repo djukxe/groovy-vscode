@@ -1,7 +1,7 @@
 {
-  "name": "Jenkins Pipeline (Groovy)",
-  "scopeName": "source.jenkins.pipeline",
-  "fileTypes": ["Jenkinsfile", "jenkins", "pipeline"],
+  "name": "Jenkinsfile (Groovy)",
+  "scopeName": "source.jenkins",
+  "fileTypes": ["Jenkinsfile", "jenkins"],
   "patterns": [
     { "include": "source.groovy" },
     { "include": "#jenkins-blocks" },
@@ -95,7 +95,6 @@
           },
           "end": "\\}",
           "patterns": [
-            { "include": "source.groovy" },
             { "include": "#jenkins-directives" },
             { "include": "#jenkins-steps" },
             { "include": "#jenkins-post" },
