@@ -31,12 +31,10 @@ export function activate(context: ExtensionContext) {
     // Register the server for Groovy documents
     documentSelector: [
       { scheme: 'file', language: 'groovy' },
-      { scheme: 'untitled', language: 'groovy' }
-    ],
-    synchronize: {
-      // Notify the server about file changes to '.groovy files contained in the workspace
-      fileEvents: workspace.createFileSystemWatcher('**/*.{groovy,gvy,gy,gsh}')
-    }
+      { scheme: 'untitled', language: 'groovy' },
+      { scheme: 'file', language: 'jenkinsfile' },
+      { scheme: 'untitled', language: 'jenkinsfile' },
+    ]
   };
 
   // Create the language client and start the client.

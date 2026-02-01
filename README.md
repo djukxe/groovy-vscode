@@ -9,17 +9,24 @@
 [![GitHub stars](https://img.shields.io/github/stars/djukxe/groovy-vscode.png?label=Star&maxAge=2592000)](https://github.com/djukxe/groovy-vscode/stargazers/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.png?style=flat-square)](https://makeapullrequest.com)
 
-A [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=JulienTAHON.groovy-vscode) that provides Language Server Protocol (LSP) support for Groovy, enabling rich language features like syntax highlighting, code completion, diagnostics, and more.
+A [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=JulienTAHON.groovy-vscode) that provides Language Server Protocol (LSP) support for Groovy and Jenkinsfile
 
 ## Features
 
-- **Syntax Highlighting**: Full TextMate grammar support for Groovy syntax
 - **Code Completion**: Intelligent keyword and context-aware suggestions
 - **Go to Definition**: Jump to the definition of classes, methods, properties, and variables
 - **Document Symbols**: Navigate classes, methods, and properties with the outline view
 - **Diagnostics**: Real-time syntax validation and error detection
 - **Hover Information**: Display documentation for keywords and symbols
 - **Language Configuration**: Auto-closing brackets, comment toggling, and proper indentation
+
+**⚠️ Note**: the default syntax highlighting for Groovy files is provided by a
+[TextMate rule](https://github.com/microsoft/vscode/blob/main/extensions/groovy/syntaxes/groovy.tmLanguage.json) embedded in VS
+Code, not by this extension.
+
+### Jenkins specific features
+- **Syntax Highlighting**: Full TextMate grammar support for Jenkinsfile
+
 
 ## Extension Settings
 
@@ -77,8 +84,7 @@ groovy-vscode
 │   ├── src
 │   │   └── extension.ts
 │   └── syntaxes
-│       ├── groovy.tmLanguage.json
-│       └── jenkins-pipeline.tmLanguage.json
+│       └── jenkinsfile.tmLanguage.json
 └── server
     └── src
         ├── server.ts
@@ -122,7 +128,7 @@ Before publishing, test the packaged extension:
    - Extensions panel → `...` menu → Install from VSIX
    - Select the generated `.vsix` file
 
-2. Test all features with `.groovy` files. Some files can be found in `groovy/`folder
+2. Test all features with `.groovy` (or `Jenkinsfile`) files. Sample files can be found in `groovy/`folder
 
 ## License
 

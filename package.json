@@ -24,10 +24,15 @@
     "shared-library"
   ],
   "activationEvents": [
+    "onLanguage:jenkinsfile",
     "workspaceContains:**/*.groovy",
     "workspaceContains:**/*.gvy",
     "workspaceContains:**/*.gy",
-    "workspaceContains:**/*.gsh"
+    "workspaceContains:**/*.gsh",
+    "workspaceContains:**/*.jenkins",
+    "workspaceContains:**/*.pipeline",
+    "workspaceContains:**/Jenkinsfile",
+    "workspaceContains:**/Jenkinsfile.*"
   ],
   "main": "./client/out/extension",
   "contributes": {
@@ -47,32 +52,30 @@
         "configuration": "./language-configuration.json"
       },
       {
-        "id": "jenkins-pipeline",
+        "id": "jenkinsfile",
         "aliases": [
           "Jenkinsfile"
         ],
         "extensions": [
           ".jenkins",
-          ".pipeline"
+          ".pipeline",
+          ".job"
         ],
         "filenames": [
-          "Jenkinsfile"
+          "Jenkinsfile",
+          "jenkinsfile"
+        ],
+        "filenamePatterns": [
+          "*Jenkinsfile*",
+          "*jenkinsfile*"
         ]
       }
     ],
     "grammars": [
       {
-        "language": "groovy",
-        "scopeName": "source.groovy",
-        "path": "./client/syntaxes/groovy.tmLanguage.json"
-      },
-      {
-        "language": "jenkins-pipeline",
-        "scopeName": "source.jenkins.pipeline",
-        "path": "./client/syntaxes/jenkins-pipeline.tmLanguage.json",
-        "injectTo": [
-          "source.groovy"
-        ]
+        "language": "jenkinsfile",
+        "scopeName": "source.jenkins",
+        "path": "./client/syntaxes/jenkinsfile.tmLanguage.json"
       }
     ],
     "configuration": {

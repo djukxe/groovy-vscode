@@ -10,3 +10,4 @@ venv
 yallist
 vscodeignore
 softprops
+JSONLINT
