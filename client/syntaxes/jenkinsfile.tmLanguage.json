@@ -1,10 +1,7 @@
 {
   "name": "Jenkinsfile (Groovy)",
   "scopeName": "source.jenkins",
-  "fileTypes": [
-    "Jenkinsfile",
-    "jenkins"
-  ],
+  "fileTypes": ["Jenkinsfile", "jenkins"],
   "patterns": [
     { "include": "source.groovy" },
     { "include": "#jenkins-blocks" },
@@ -88,7 +85,7 @@
           "begin": "(?<![\\w.])(?:(?<=^)|(?<=[;{]))\\s*(script)\\b(?=\\s*\\{)",
           "beginCaptures": { "1": { "name": "storage.type.jenkins.script" } },
           "end": "\\}",
-          "patterns": [ { "include": "source.groovy" } ]
+          "patterns": [{ "include": "source.groovy" }]
         }
       ]
     }
