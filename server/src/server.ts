@@ -643,10 +643,7 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
 
 function findMethodDefinitionWithSignature(text: string, symbol: string, args: string[]): Location | null {
   const methodPatterns = [
-    // Standard method with return type
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
-    // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g')
   ];
 
   for (const methodRegex of methodPatterns) {
@@ -662,9 +659,9 @@ function findMethodDefinitionWithSignature(text: string, symbol: string, args: s
         // Check if parameter count matches (considering default parameters)
         if (matchesParameterCount(expectedParams, args.length)) {
           // Found a matching signature
-          const lines = text.substring(0, match.index).split('\n');
-          const line = lines.length - 1;
-          const character = lines[lines.length - 1].length;
+          // Find the actual position of the symbol within the match string
+          const { line, character } = getSymbolPosition(match, symbol, text);
+          
           return Location.create(
             '', // Will be set by caller
             Range.create(
@@ -735,7 +732,7 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
   return null;
 }
 
-function findFunctionDefinitionWithSignature(filePath: string, content: string, symbol: string, args: string[]): Location | null {
+function findFunctionDefinitionWithSignature(filePath: string, text: string, symbol: string, args: string[]): Location | null {
   const functionPatterns = [
     // Standard function definition with def
     new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
@@ -745,20 +742,20 @@ function findFunctionDefinitionWithSignature(filePath: string, content: string, 
 
   for (const functionRegex of functionPatterns) {
     let match;
-    while ((match = functionRegex.exec(content)) !== null) {
+    while ((match = functionRegex.exec(text)) !== null) {
       // Extract the parameter list from the function definition
       const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-      const paramEnd = findMatchingParen(content, paramStart);
+      const paramEnd = findMatchingParen(text, paramStart);
       if (paramEnd !== -1) {
-        const paramList = content.substring(paramStart + 1, paramEnd);
+        const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
         // Check if parameter count matches (considering default parameters)
         if (matchesParameterCount(expectedParams, args.length)) {
           // Found a matching signature
-          const lines = content.substring(0, match.index).split('\n');
-          const line = lines.length - 1;
-          const character = lines[lines.length - 1].length;
+          // Find the actual position of the symbol within the match string
+          const { line, character } = getSymbolPosition(match, symbol, text);
+          
           return Location.create(
             `file://${filePath}`,
             Range.create(
@@ -772,6 +769,16 @@ function findFunctionDefinitionWithSignature(filePath: string, content: string, 
   }
 
   return null;
+}
+
+function getSymbolPosition(match: RegExpExecArray, symbol: string, text: string) {
+  const symbolPosInMatch = match[0].lastIndexOf(symbol);
+  const actualSymbolIndex = match.index + symbolPosInMatch;
+
+  const linesBeforeSymbol = text.substring(0, actualSymbolIndex).split('\n');
+  const line = linesBeforeSymbol.length - 1;
+  const character = linesBeforeSymbol[linesBeforeSymbol.length - 1].length;
+  return { line, character };
 }
 
 function findClassOrMethodDefinitionInSrcWithSignature(srcDir: string, symbol: string, args: string[]): Location | null {
