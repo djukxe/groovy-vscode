@@ -1,6 +1,26 @@
 // Utility functions for the Groovy language server
 // These can be tested independently of the LSP server setup
 
+/**
+ * Determines whether the actual number of arguments matches the expected parameters.
+ * Accounts for parameters with default values, which are optional.
+ *
+ * @param expectedParams - An array of parameter declarations, where parameters with default values contain '='
+ * @param actualArgCount - The number of arguments provided in the function call
+ * @returns `true` if the actual argument count is valid for the expected parameters, `false` otherwise
+ *
+ * @example
+ * // Returns true - 1 argument matches 1 required parameter
+ * matchesParameterCount(['x'], 1)
+ *
+ * @example
+ * // Returns true - 1 argument matches 1 required parameter (y has default)
+ * matchesParameterCount(['x', 'y = 5'], 1)
+ *
+ * @example
+ * // Returns false - 3 arguments exceed 2 total parameters
+ * matchesParameterCount(['x', 'y = 5'], 3)
+ */
 export function matchesParameterCount(expectedParams: string[], actualArgCount: number): boolean {
   const paramCount = expectedParams.length;
 
@@ -136,4 +156,23 @@ export function findMethodSignature(text: string, symbol: string, args: string[]
 
   // Otherwise, return the first one (maintains backward compatibility)
   return matchingSignatures[0];
+}
+/**
+ * Calculates the line and character position of a symbol within a text.
+ * Given a regex match result, finds where the symbol name actually appears
+ * and returns the precise line and character coordinates.
+ *
+ * @param match - The RegExpExecArray result from a regex match
+ * @param symbol - The symbol name to locate within the match
+ * @param text - The full text being searched
+ * @returns An object with `line` and `character` properties indicating the position
+ */
+export function getSymbolPosition(match: RegExpExecArray, symbol: string, text: string): { line: number; character: number } {
+  const symbolPosInMatch = match[0].lastIndexOf(symbol);
+  const actualSymbolIndex = match.index + symbolPosInMatch;
+
+  const linesBeforeSymbol = text.substring(0, actualSymbolIndex).split('\n');
+  const line = linesBeforeSymbol.length - 1;
+  const character = linesBeforeSymbol[linesBeforeSymbol.length - 1].length;
+  return { line, character };
 }

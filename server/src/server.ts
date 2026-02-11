@@ -31,7 +31,8 @@ import {
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParen,
-  findMethodSignature
+  findMethodSignature,
+  getSymbolPosition
 } from './utils';
 
 // Create a connection for the server
@@ -774,16 +775,6 @@ function findFunctionDefinitionWithSignature(filePath: string, text: string, sym
   return null;
 }
 
-function getSymbolPosition(match: RegExpExecArray, symbol: string, text: string) {
-  const symbolPosInMatch = match[0].lastIndexOf(symbol);
-  const actualSymbolIndex = match.index + symbolPosInMatch;
-
-  const linesBeforeSymbol = text.substring(0, actualSymbolIndex).split('\n');
-  const line = linesBeforeSymbol.length - 1;
-  const character = linesBeforeSymbol[linesBeforeSymbol.length - 1].length;
-  return { line, character };
-}
-
 function findClassOrMethodDefinitionInSrcWithSignature(srcDir: string, symbol: string, args: string[]): Location | null {
   // Recursively search for class or method definition in src directory
   function searchDirectory(dir: string): Location | null {
@@ -836,6 +827,7 @@ function findClassDefinitionInFile(filePath: string, content: string, symbol: st
   }
   return null;
 }
+
 documents.listen(connection);
 
 // Listen on the connection

@@ -1,4 +1,4 @@
-import { matchesParameterCount, parseMethodParameters, findMethodSignature } from '../utils';
+import { matchesParameterCount, parseMethodParameters, findMethodSignature, getSymbolPosition } from '../utils';
 
 describe('Parameter Matching', () => {
   describe('matchesParameterCount', () => {
@@ -117,5 +117,40 @@ class TestClass {
   test('finds static method with default parameter', () => {
     const result = findMethodSignature(testClassCode, 'staticMethod', []);
     expect(result).toBe('static void staticMethod(String arg = "default")');
+  });
+});
+
+describe('Symbol Position Calculation', () => {
+  test('calculates correct line and character for symbol at start of line', () => {
+    const text = 'def myFunction() {\n}';
+    const regex = /def\s+(\w+)\s*\(/g;
+    const match = regex.exec(text);
+    if (match) {
+      const { line, character } = getSymbolPosition(match, 'myFunction', text);
+      expect(line).toBe(0);
+      expect(character).toBe(4); // 'def ' is 4 characters
+    }
+  });
+
+  test('calculates correct line and character for symbol on different line', () => {
+    const text = 'class MyClass {\n  def myMethod() {\n  }\n}';
+    const regex = /def\s+(\w+)\s*\(/g;
+    const match = regex.exec(text);
+    if (match) {
+      const { line, character } = getSymbolPosition(match, 'myMethod', text);
+      expect(line).toBe(1);
+      expect(character).toBe(6); // '  def ' is 6 characters
+    }
+  });
+
+  test('calculates correct position for class definition', () => {
+    const text = 'public class MyClass {\n}';
+    const regex = /class\s+(\w+)/g;
+    const match = regex.exec(text);
+    if (match) {
+      const { line, character } = getSymbolPosition(match, 'MyClass', text);
+      expect(line).toBe(0);
+      expect(character).toBe(13); // 'public class ' is 13 characters
+    }
   });
 });
