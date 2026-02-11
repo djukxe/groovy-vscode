@@ -30,7 +30,7 @@ import * as path from 'path';
 import {
   matchesParameterCount,
   parseMethodParameters,
-  findMatchingParen,
+  findMatchingParenthesis,
   findMethodSignature,
   getSymbolPosition
 } from './utils';
@@ -652,7 +652,7 @@ function findMethodDefinitionWithSignature(text: string, symbol: string, args: s
   while ((match = methodRegex.exec(text)) !== null) {
     // Extract the parameter list from the method definition
     const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-    const paramEnd = findMatchingParen(text, paramStart);
+    const paramEnd = findMatchingParenthesis(text, paramStart);
     if (paramEnd !== -1) {
       const paramList = text.substring(paramStart + 1, paramEnd);
       const expectedParams = parseMethodParameters(paramList);
@@ -745,7 +745,7 @@ function findFunctionDefinitionWithSignature(filePath: string, text: string, sym
     while ((match = functionRegex.exec(text)) !== null) {
       // Extract the parameter list from the function definition
       const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-      const paramEnd = findMatchingParen(text, paramStart);
+      const paramEnd = findMatchingParenthesis(text, paramStart);
       if (paramEnd !== -1) {
         const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);

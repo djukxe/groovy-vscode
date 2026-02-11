@@ -89,7 +89,7 @@ export function parseMethodParameters(paramList: string): string[] {
   return params;
 }
 
-export function findMatchingParen(text: string, openParenPos: number): number {
+export function findMatchingParenthesis(text: string, openParenPos: number): number {
   let depth = 0;
   for (let i = openParenPos; i < text.length; i++) {
     if (text[i] === '(') {
@@ -120,7 +120,7 @@ export function findMethodSignature(text: string, symbol: string, args: string[]
       // Find the opening paren position
       const openParenIndex = match[0].indexOf('(');
       const paramStart = match.index + openParenIndex;
-      const paramEnd = findMatchingParen(text, paramStart);
+      const paramEnd = findMatchingParenthesis(text, paramStart);
       if (paramEnd !== -1) {
         const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
