@@ -606,10 +606,11 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
   const classRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+(${symbol})\\b`, 'g');
   let match = classRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   // Try to find method definition with matching signature
@@ -622,20 +623,22 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
   const propertyRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static|final)?\\s*(?:def|\\w+)\\s+(${symbol})\\s*=`, 'g');
   match = propertyRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   // Try to find variable definition (including method parameters and local variables)
   const variableRegex = new RegExp(`(?:^|\\n|\\(|,)\\s*(?:def|\\w+)?\\s+(${symbol})\\s*(?:=|,|\\)|\\n)`, 'g');
   match = variableRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   return null;
@@ -822,9 +825,7 @@ function findClassDefinitionInFile(filePath: string, content: string, symbol: st
   const classRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+${symbol}\\b`, 'g');
   const match = classRegex.exec(content);
   if (match) {
-    const lines = content.substring(0, match.index).split('\n');
-    const line = lines.length - 1;
-    const character = lines[lines.length - 1].length;
+    const { line, character } = getSymbolPosition(match, symbol, content);
     return Location.create(
       `file://${filePath}`,
       Range.create(
