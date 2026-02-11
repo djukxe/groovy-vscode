@@ -646,34 +646,30 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
 }
 
 function findMethodDefinitionWithSignature(text: string, symbol: string, args: string[]): Location | null {
-  const methodPatterns = [
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g')
-  ];
+  const methodRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g');
 
-  for (const methodRegex of methodPatterns) {
-    let match;
-    while ((match = methodRegex.exec(text)) !== null) {
-      // Extract the parameter list from the method definition
-      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-      const paramEnd = findMatchingParen(text, paramStart);
-      if (paramEnd !== -1) {
-        const paramList = text.substring(paramStart + 1, paramEnd);
-        const expectedParams = parseMethodParameters(paramList);
+  let match;
+  while ((match = methodRegex.exec(text)) !== null) {
+    // Extract the parameter list from the method definition
+    const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+    const paramEnd = findMatchingParen(text, paramStart);
+    if (paramEnd !== -1) {
+      const paramList = text.substring(paramStart + 1, paramEnd);
+      const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches (considering default parameters)
-        if (matchesParameterCount(expectedParams, args.length)) {
-          // Found a matching signature
-          // Find the actual position of the symbol within the match string
-          const { line, character } = getSymbolPosition(match, symbol, text);
-          
-          return Location.create(
-            '', // Will be set by caller
-            Range.create(
-              Position.create(line, character),
-              Position.create(line, character + symbol.length)
-            )
-          );
-        }
+      // Check if parameter count matches (considering default parameters)
+      if (matchesParameterCount(expectedParams, args.length)) {
+        // Found a matching signature
+        // Find the actual position of the symbol within the match string
+        const { line, character } = getSymbolPosition(match, symbol, text);
+        
+        return Location.create(
+          '', // Will be set by caller
+          Range.create(
+            Position.create(line, character),
+            Position.create(line, character + symbol.length)
+          )
+        );
       }
     }
   }
