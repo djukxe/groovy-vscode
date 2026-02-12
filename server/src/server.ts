@@ -30,8 +30,9 @@ import * as path from 'path';
 import {
   matchesParameterCount,
   parseMethodParameters,
-  findMatchingParen,
-  findMethodSignature
+  findMatchingParenthesis,
+  findMethodSignature,
+  getSymbolPosition
 } from './utils';
 
 // Create a connection for the server
@@ -606,10 +607,11 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
   const classRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+(${symbol})\\b`, 'g');
   let match = classRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   // Try to find method definition with matching signature
@@ -622,57 +624,52 @@ function findDefinitionInDocumentWithSignature(document: TextDocument, text: str
   const propertyRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static|final)?\\s*(?:def|\\w+)\\s+(${symbol})\\s*=`, 'g');
   match = propertyRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   // Try to find variable definition (including method parameters and local variables)
   const variableRegex = new RegExp(`(?:^|\\n|\\(|,)\\s*(?:def|\\w+)?\\s+(${symbol})\\s*(?:=|,|\\)|\\n)`, 'g');
   match = variableRegex.exec(text);
   if (match) {
-    const startOffset = match.index + match[0].indexOf(symbol);
-    const startPos = document.positionAt(startOffset);
-    const endPos = document.positionAt(startOffset + symbol.length);
-    return Location.create(document.uri, Range.create(startPos, endPos));
+    const { line, character } = getSymbolPosition(match, symbol, text);
+    return Location.create(document.uri, Range.create(
+      Position.create(line, character),
+      Position.create(line, character + symbol.length)
+    ));
   }
 
   return null;
 }
 
 function findMethodDefinitionWithSignature(text: string, symbol: string, args: string[]): Location | null {
-  const methodPatterns = [
-    // Standard method with return type
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g'),
-    // Method without explicit return type (property-like methods)
-    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*${symbol}\\s*\\(`, 'g')
-  ];
+  const methodRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?(?:\\s*<[^>]*>)*)\\s+${symbol}\\s*\\(`, 'g');
 
-  for (const methodRegex of methodPatterns) {
-    let match;
-    while ((match = methodRegex.exec(text)) !== null) {
-      // Extract the parameter list from the method definition
-      const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-      const paramEnd = findMatchingParen(text, paramStart);
-      if (paramEnd !== -1) {
-        const paramList = text.substring(paramStart + 1, paramEnd);
-        const expectedParams = parseMethodParameters(paramList);
+  let match;
+  while ((match = methodRegex.exec(text)) !== null) {
+    // Extract the parameter list from the method definition
+    const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
+    const paramEnd = findMatchingParenthesis(text, paramStart);
+    if (paramEnd !== -1) {
+      const paramList = text.substring(paramStart + 1, paramEnd);
+      const expectedParams = parseMethodParameters(paramList);
 
-        // Check if parameter count matches (considering default parameters)
-        if (matchesParameterCount(expectedParams, args.length)) {
-          // Found a matching signature
-          const lines = text.substring(0, match.index).split('\n');
-          const line = lines.length - 1;
-          const character = lines[lines.length - 1].length;
-          return Location.create(
-            '', // Will be set by caller
-            Range.create(
-              Position.create(line, character),
-              Position.create(line, character + symbol.length)
-            )
-          );
-        }
+      // Check if parameter count matches (considering default parameters)
+      if (matchesParameterCount(expectedParams, args.length)) {
+        // Found a matching signature
+        // Find the actual position of the symbol within the match string
+        const { line, character } = getSymbolPosition(match, symbol, text);
+        
+        return Location.create(
+          '', // Will be set by caller
+          Range.create(
+            Position.create(line, character),
+            Position.create(line, character + symbol.length)
+          )
+        );
       }
     }
   }
@@ -735,7 +732,7 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
   return null;
 }
 
-function findFunctionDefinitionWithSignature(filePath: string, content: string, symbol: string, args: string[]): Location | null {
+function findFunctionDefinitionWithSignature(filePath: string, text: string, symbol: string, args: string[]): Location | null {
   const functionPatterns = [
     // Standard function definition with def
     new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
@@ -745,20 +742,20 @@ function findFunctionDefinitionWithSignature(filePath: string, content: string, 
 
   for (const functionRegex of functionPatterns) {
     let match;
-    while ((match = functionRegex.exec(content)) !== null) {
+    while ((match = functionRegex.exec(text)) !== null) {
       // Extract the parameter list from the function definition
       const paramStart = match.index + match[0].length - 1; // Position after opening parenthesis
-      const paramEnd = findMatchingParen(content, paramStart);
+      const paramEnd = findMatchingParenthesis(text, paramStart);
       if (paramEnd !== -1) {
-        const paramList = content.substring(paramStart + 1, paramEnd);
+        const paramList = text.substring(paramStart + 1, paramEnd);
         const expectedParams = parseMethodParameters(paramList);
 
         // Check if parameter count matches (considering default parameters)
         if (matchesParameterCount(expectedParams, args.length)) {
           // Found a matching signature
-          const lines = content.substring(0, match.index).split('\n');
-          const line = lines.length - 1;
-          const character = lines[lines.length - 1].length;
+          // Find the actual position of the symbol within the match string
+          const { line, character } = getSymbolPosition(match, symbol, text);
+          
           return Location.create(
             `file://${filePath}`,
             Range.create(
@@ -815,9 +812,7 @@ function findClassDefinitionInFile(filePath: string, content: string, symbol: st
   const classRegex = new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+${symbol}\\b`, 'g');
   const match = classRegex.exec(content);
   if (match) {
-    const lines = content.substring(0, match.index).split('\n');
-    const line = lines.length - 1;
-    const character = lines[lines.length - 1].length;
+    const { line, character } = getSymbolPosition(match, symbol, content);
     return Location.create(
       `file://${filePath}`,
       Range.create(
@@ -828,6 +823,7 @@ function findClassDefinitionInFile(filePath: string, content: string, symbol: st
   }
   return null;
 }
+
 documents.listen(connection);
 
 // Listen on the connection
