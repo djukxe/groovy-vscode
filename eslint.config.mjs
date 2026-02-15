@@ -27,5 +27,10 @@ export default defineConfig([{
         eqeqeq: "warn",
         "no-throw-literal": "warn",
         semi: "off",
+        "@typescript-eslint/no-unused-vars": ["error", { 
+            "args": "all",
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_"
+        }]
     },
 }]);
