@@ -280,6 +280,16 @@ connection.onHover((params: HoverParams): Hover | null => {
       }
 
       // Check if it's a class, method, or property
+      const doc = extractGroovydocForSymbolInText(text, word);
+      if (doc) {
+        return {
+          contents: {
+            kind: 'markdown',
+            value: doc
+          }
+        };
+      }
+
       const symbolInfo = findSymbolInfo(text, word);
       if (symbolInfo) {
         return {
@@ -334,7 +344,8 @@ function findFunctionSignatureForHover(document: TextDocument, text: string, sym
   // Try to find method definition with matching signature
   const signature = findMethodSignature(text, symbol, args);
   if (signature) {
-    return formatSignature(symbol, signature);
+    const doc = extractGroovydocForSymbolInText(text, symbol);
+    return formatSignature(symbol, signature, doc);
   }
 
   return null;
@@ -362,13 +373,15 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
               // If the symbol matches the filename, look for the 'call' function with matching signature
               const signature = findMethodSignature(content, 'call', args);
               if (signature) {
-                return formatSignature(`${fileNameWithoutExt}.call`, signature);
+                    const doc = extractGroovydocForSymbolInText(content, 'call');
+                    return formatSignature(`${fileNameWithoutExt}.call`, signature, doc);
               }
             } else {
               // Otherwise, look for a function with the exact symbol name and matching signature
               const signature = findMethodSignature(content, symbol, args);
               if (signature) {
-                return formatSignature(symbol, signature);
+                    const doc = extractGroovydocForSymbolInText(content, symbol);
+                    return formatSignature(symbol, signature, doc);
               }
             }
           }
@@ -422,11 +435,54 @@ function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]
   return searchDirectory(srcDir);
 }
 
-function formatSignature(symbol: string, signature: string): string {
+function formatSignature(symbol: string, signature: string, doc?: string): string {
   // Clean up the signature for display
   const cleanSignature = signature.replace(/\s+/g, ' ').trim();
 
-  return `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
+  let md = '';
+  if (doc) {
+    const cleanedDoc = doc.trim();
+    md += cleanedDoc + '\n\n';
+  }
+  md += `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
+  return md;
+}
+
+function extractGroovydocForSymbolInText(text: string, symbol: string): string | undefined {
+  // Search for common definition patterns and look for a /** ... */ block immediately above
+  const defPatterns = [
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+${symbol}\\b`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?)\\s+${symbol}\\s*\\(`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const pattern of defPatterns) {
+    let m;
+    while ((m = pattern.exec(text)) !== null) {
+      const defIndex = m.index;
+
+      const commentEnd = text.lastIndexOf('*/', defIndex);
+      if (commentEnd === -1) {continue;}
+      const commentStart = text.lastIndexOf('/**', commentEnd);
+      if (commentStart === -1) {continue;}
+
+      // Ensure only whitespace/annotations between comment end and definition
+      const between = text.substring(commentEnd + 2, defIndex);
+      if (!/^[\s@]*$/.test(between)) {continue;}
+
+      const raw = text.substring(commentStart, commentEnd + 2);
+      return cleanGroovydoc(raw);
+    }
+  }
+
+  return undefined;
+}
+
+function cleanGroovydoc(raw: string): string {
+  // Strip /** and */ and leading * on each line
+  let inner = raw.replace(/^\/\*\*/s, '').replace(/\*\/$/s, '');
+  const lines = inner.split(/\r?\n/).map(l => l.replace(/^\s*\*\s?/, '')).map(l => l.replace(/^\s+|\s+$/g, ''));
+  return lines.join('\n').trim();
 }
 
 function findSymbolInfo(text: string, symbol: string): string | null {
