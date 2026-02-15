@@ -345,7 +345,7 @@ function findFunctionSignatureForHover(text: string, symbol: string, args: strin
   // Try to find method definition with matching signature
   const signature = findMethodSignature(text, symbol, args);
   if (signature) {
-    const doc = extractGroovydocForSymbolInText(text, symbol);
+    const doc = extractGroovydocForSymbolInText(text, symbol, args);
     return formatSignature(signature, doc);
   }
 
@@ -374,14 +374,14 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
               // If the symbol matches the filename, look for the 'call' function with matching signature
               const signature = findMethodSignature(content, 'call', args);
               if (signature) {
-                    const doc = extractGroovydocForSymbolInText(content, 'call');
+                    const doc = extractGroovydocForSymbolInText(content, 'call', args);
                     return formatSignature(signature, doc);
               }
             } else {
               // Otherwise, look for a function with the exact symbol name and matching signature
               const signature = findMethodSignature(content, symbol, args);
               if (signature) {
-                    const doc = extractGroovydocForSymbolInText(content, symbol);
+                    const doc = extractGroovydocForSymbolInText(content, symbol, args);
                     return formatSignature(signature, doc);
               }
             }
@@ -449,8 +449,9 @@ function formatSignature(signature: string, doc?: string): string {
   return md;
 }
 
-function extractGroovydocForSymbolInText(text: string, symbol: string): string | undefined {
+function extractGroovydocForSymbolInText(text: string, symbol: string, args?: string[]): string | undefined {
   // Search for common definition patterns and look for a /** ... */ block immediately above
+  // If args are provided, match the correct overload by parameter count
   const defPatterns = [
     new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+${symbol}\\b`, 'g'),
     new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?)\\s+${symbol}\\s*\\(`, 'g'),
@@ -470,6 +471,22 @@ function extractGroovydocForSymbolInText(text: string, symbol: string): string |
       // Ensure only whitespace/annotations between comment end and definition
       const between = text.substring(commentEnd + 2, defIndex);
       if (!/^[\s@]*$/.test(between)) {continue;}
+
+      // If args are provided, check if this definition matches the parameter count (overload matching)
+      if (args !== undefined && m[0].indexOf('(') !== -1) {
+        // This looks like a method definition, extract parameter list
+        const paramStart = defIndex + m[0].length - 1; // Position of opening paren
+        const paramEnd = findMatchingParenthesis(text, paramStart);
+        if (paramEnd !== -1) {
+          const paramList = text.substring(paramStart + 1, paramEnd);
+          const expectedParams = parseMethodParameters(paramList);
+          
+          // Check if parameter count matches (considering default parameters)
+          if (!matchesParameterCount(expectedParams, args.length)) {
+            continue; // This overload doesn't match, try next
+          }
+        }
+      }
 
       const raw = text.substring(commentStart, commentEnd + 2);
       return cleanGroovydoc(raw);
