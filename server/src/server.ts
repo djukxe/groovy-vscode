@@ -106,6 +106,7 @@ connection.onInitialized(() => {
 });
 
 connection.onDidChangeConfiguration((change) => {
+  connection.console.log(`Configuration changed, reloading settings...${JSON.stringify(change, null, 2)}`);
   if (hasConfigurationCapability) {
     connection.workspace.getConfiguration('groovy.jenkins.sharedLibrary').then(config => {
       if (config) {
@@ -239,23 +240,23 @@ connection.onHover((params: HoverParams): Hover | null => {
     const { symbol, args } = functionCallContext;
 
     // Search for matching function signature
-    const signatureInfo = findFunctionSignatureForHover(document, text, symbol, args);
-    if (signatureInfo) {
+    const signatureCurrentDoc = findFunctionSignatureInDocument(text, symbol, args);
+    if (signatureCurrentDoc) {
       return {
         contents: {
           kind: 'markdown',
-          value: signatureInfo
+          value: signatureCurrentDoc
         }
       };
     }
 
-    // If no exact signature match, try Jenkins shared libraries
-    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibraryForHover(symbol, args);
-    if (sharedLibSignature) {
+    // If no exact signature match, try to find any signature info for the symbol in workspace
+    const signatureWorkspace = findFunctionSignatureInWorkspace(symbol, args);
+    if (signatureWorkspace) {
       return {
         contents: {
           kind: 'markdown',
-          value: sharedLibSignature
+          value: signatureWorkspace
         }
       };
     }
@@ -280,6 +281,16 @@ connection.onHover((params: HoverParams): Hover | null => {
       }
 
       // Check if it's a class, method, or property
+      const doc = extractGroovydocForSymbolInText(text, word);
+      if (doc) {
+        return {
+          contents: {
+            kind: 'markdown',
+            value: doc
+          }
+        };
+      }
+
       const symbolInfo = findSymbolInfo(text, word);
       if (symbolInfo) {
         return {
@@ -330,23 +341,32 @@ function getKeywordInfo(keyword: string): string | null {
   return keywords[keyword] || null;
 }
 
-function findFunctionSignatureForHover(document: TextDocument, text: string, symbol: string, args: string[]): string | null {
+function findFunctionSignatureInDocument(text: string, symbol: string, args: string[]): string | null {
   // Try to find method definition with matching signature
   const signature = findMethodSignature(text, symbol, args);
   if (signature) {
-    return formatSignature(symbol, signature);
+    const doc = extractGroovydocForSymbolInText(text, symbol, args);
+    return formatSignature(signature, doc);
   }
 
   return null;
 }
 
-function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, args: string[]): string | null {
+function findFunctionSignatureInWorkspace(symbol: string, args: string[]): string | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
 
-  // Search in vars/ directory for global functions
   for (const workspaceFolder of workspaceFolders) {
+    // Search in src/ directory for classes and their methods
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
+    if (fs.existsSync(srcDir)) {
+      const signature = findMethodSignatureInSrc(srcDir, symbol, args);
+      if (signature) {
+        return signature;
+      }
+    }
+    // Search in vars/ directory for global functions (Jenkins shared library)
     const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), varsPath);
     if (fs.existsSync(varsDir)) {
       try {
@@ -362,28 +382,21 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
               // If the symbol matches the filename, look for the 'call' function with matching signature
               const signature = findMethodSignature(content, 'call', args);
               if (signature) {
-                return formatSignature(`${fileNameWithoutExt}.call`, signature);
+                    const doc = extractGroovydocForSymbolInText(content, 'call', args);
+                    return formatSignature(signature, doc);
               }
             } else {
               // Otherwise, look for a function with the exact symbol name and matching signature
               const signature = findMethodSignature(content, symbol, args);
               if (signature) {
-                return formatSignature(symbol, signature);
+                    const doc = extractGroovydocForSymbolInText(content, symbol, args);
+                    return formatSignature(signature, doc);
               }
             }
           }
         }
       } catch (error) {
-        // Ignore errors reading vars directory
-      }
-    }
-
-    // Search in src/ directory for classes and their methods
-    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
-    if (fs.existsSync(srcDir)) {
-      const signature = findMethodSignatureInSrc(srcDir, symbol, args);
-      if (signature) {
-        return formatSignature(symbol, signature);
+        connection.console.log(`Error reading vars directory: ${error}`);
       }
     }
   }
@@ -408,13 +421,14 @@ function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
           const signature = findMethodSignature(content, symbol, args);
+          const doc = extractGroovydocForSymbolInText(content, symbol, args);
           if (signature) {
-            return signature;
+            return formatSignature(signature, doc);
           }
         }
       }
     } catch (error) {
-      // Ignore errors reading directory
+      connection.console.log(`Error reading src directory: ${error}`);
     }
     return null;
   }
@@ -422,11 +436,71 @@ function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]
   return searchDirectory(srcDir);
 }
 
-function formatSignature(symbol: string, signature: string): string {
+function formatSignature(signature: string, doc?: string): string {
   // Clean up the signature for display
   const cleanSignature = signature.replace(/\s+/g, ' ').trim();
 
-  return `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
+  let md = '';
+  if (doc) {
+    const cleanedDoc = doc.trim();
+    md += cleanedDoc + '\n\n';
+  }
+  md += `\`\`\`groovy\n${cleanSignature}\n\`\`\``;
+  return md;
+}
+
+function extractGroovydocForSymbolInText(text: string, symbol: string, args?: string[]): string | undefined {
+  // Search for common definition patterns and look for a /** ... */ block immediately above
+  // If args are provided, match the correct overload by parameter count
+  const defPatterns = [
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:abstract|final)?\\s*(?:class|interface|enum|trait)\\s+${symbol}\\b`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:public|private|protected)?\\s*(?:static)?\\s*(?:def|void|\\w+(?:<[^>]*>)?)\\s+${symbol}\\s*\\(`, 'g'),
+    new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g')
+  ];
+
+  for (const pattern of defPatterns) {
+    let m;
+    while ((m = pattern.exec(text)) !== null) {
+      const defIndex = m.index;
+
+      const commentEnd = text.lastIndexOf('*/', defIndex);
+      if (commentEnd === -1) {continue;}
+      const commentStart = text.lastIndexOf('/**', commentEnd);
+      if (commentStart === -1) {continue;}
+
+      // Ensure only whitespace/annotations between comment end and definition
+      const between = text.substring(commentEnd + 2, defIndex);
+      if (!/^[\s@]*$/.test(between)) {continue;}
+
+      // If args are provided, check if this definition matches the parameter count (overload matching)
+      if (args !== undefined && m[0].indexOf('(') !== -1) {
+        // This looks like a method definition, extract parameter list
+        const paramStart = defIndex + m[0].length - 1; // Position of opening paren
+        const paramEnd = findMatchingParenthesis(text, paramStart);
+        if (paramEnd !== -1) {
+          const paramList = text.substring(paramStart + 1, paramEnd);
+          const expectedParams = parseMethodParameters(paramList);
+          
+          // Check if parameter count matches (considering default parameters)
+          if (!matchesParameterCount(expectedParams, args.length)) {
+            continue; // This overload doesn't match, try next
+          }
+        }
+      }
+
+      const raw = text.substring(commentStart, commentEnd + 2);
+      return cleanGroovydoc(raw);
+    }
+  }
+
+  return undefined;
+}
+
+function cleanGroovydoc(raw: string): string {
+  // Strip /** and */ and leading * on each line
+  let inner = raw.replace(/^\/\*\*/s, '').replace(/\*\/$/s, '');
+  const lines = inner.split(/\r?\n/).map(l => l.replace(/^\s*\*\s?/, '')).map(l => l.replace(/^\s+|\s+$/g, ''));
+  return lines.join('\n').trim();
 }
 
 function findSymbolInfo(text: string, symbol: string): string | null {
@@ -713,7 +787,7 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
           }
         }
       } catch (error) {
-        // Ignore errors reading vars directory
+        connection.console.log(`Error reading vars directory: ${error}`);
       }
     }
 
@@ -723,7 +797,6 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
       connection.console.log(`Searching for class or method ${symbol} with ${args.length} args in src directory: ${srcDir}`);
       const location = findClassOrMethodDefinitionInSrcWithSignature(srcDir, symbol, args);
       if (location) {
-        connection.console.log(`Found location: ${location}`);
         return location;
       }
     }
@@ -800,7 +873,7 @@ function findClassOrMethodDefinitionInSrcWithSignature(srcDir: string, symbol: s
         }
       }
     } catch (error) {
-      // Ignore errors reading directory
+      connection.console.log(`Error reading directory: ${error}`);
     }
     return null;
   }
