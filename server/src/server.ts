@@ -397,7 +397,7 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
     if (fs.existsSync(srcDir)) {
       const signature = findMethodSignatureInSrc(srcDir, symbol, args);
       if (signature) {
-        return formatSignature(symbol, signature);
+        return signature;
       }
     }
   }
@@ -422,8 +422,9 @@ function findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]
         } else if (item.endsWith('.groovy')) {
           const content = fs.readFileSync(itemPath, 'utf8');
           const signature = findMethodSignature(content, symbol, args);
+          const doc = extractGroovydocForSymbolInText(content, symbol, args);
           if (signature) {
-            return signature;
+            return formatSignature(signature, doc);
           }
         }
       }
