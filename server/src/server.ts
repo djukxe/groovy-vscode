@@ -240,23 +240,23 @@ connection.onHover((params: HoverParams): Hover | null => {
     const { symbol, args } = functionCallContext;
 
     // Search for matching function signature
-    const signatureInfo = findFunctionSignatureForHover(text, symbol, args);
-    if (signatureInfo) {
+    const signatureCurrentDoc = findFunctionSignatureInDocument(text, symbol, args);
+    if (signatureCurrentDoc) {
       return {
         contents: {
           kind: 'markdown',
-          value: signatureInfo
+          value: signatureCurrentDoc
         }
       };
     }
 
-    // If no exact signature match, try Jenkins shared libraries
-    const sharedLibSignature = findFunctionSignatureInJenkinsSharedLibraryForHover(symbol, args);
-    if (sharedLibSignature) {
+    // If no exact signature match, try to find any signature info for the symbol in workspace
+    const signatureWorkspace = findFunctionSignatureInWorkspace(symbol, args);
+    if (signatureWorkspace) {
       return {
         contents: {
           kind: 'markdown',
-          value: sharedLibSignature
+          value: signatureWorkspace
         }
       };
     }
@@ -341,7 +341,7 @@ function getKeywordInfo(keyword: string): string | null {
   return keywords[keyword] || null;
 }
 
-function findFunctionSignatureForHover(text: string, symbol: string, args: string[]): string | null {
+function findFunctionSignatureInDocument(text: string, symbol: string, args: string[]): string | null {
   // Try to find method definition with matching signature
   const signature = findMethodSignature(text, symbol, args);
   if (signature) {
@@ -352,13 +352,21 @@ function findFunctionSignatureForHover(text: string, symbol: string, args: strin
   return null;
 }
 
-function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, args: string[]): string | null {
+function findFunctionSignatureInWorkspace(symbol: string, args: string[]): string | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
 
-  // Search in vars/ directory for global functions
   for (const workspaceFolder of workspaceFolders) {
+    // Search in src/ directory for classes and their methods
+    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
+    if (fs.existsSync(srcDir)) {
+      const signature = findMethodSignatureInSrc(srcDir, symbol, args);
+      if (signature) {
+        return signature;
+      }
+    }
+    // Search in vars/ directory for global functions (Jenkins shared library)
     const varsDir = path.join(workspaceFolder.uri.replace('file://', ''), varsPath);
     if (fs.existsSync(varsDir)) {
       try {
@@ -389,15 +397,6 @@ function findFunctionSignatureInJenkinsSharedLibraryForHover(symbol: string, arg
         }
       } catch (error) {
         connection.console.log(`Error reading vars directory: ${error}`);
-      }
-    }
-
-    // Search in src/ directory for classes and their methods
-    const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), srcPath);
-    if (fs.existsSync(srcDir)) {
-      const signature = findMethodSignatureInSrc(srcDir, symbol, args);
-      if (signature) {
-        return signature;
       }
     }
   }
@@ -798,7 +797,6 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
       connection.console.log(`Searching for class or method ${symbol} with ${args.length} args in src directory: ${srcDir}`);
       const location = findClassOrMethodDefinitionInSrcWithSignature(srcDir, symbol, args);
       if (location) {
-        connection.console.log(`Found location: ${location}`);
         return location;
       }
     }
