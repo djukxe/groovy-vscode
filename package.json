@@ -1,6 +1,6 @@
 {
   "name": "groovy-vscode",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Full-featured Groovy language support for VS Code with Jenkins shared library support",
   "publisher": "JulienTAHON",
   "displayName": "Groovy Language Support",
