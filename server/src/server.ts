@@ -123,40 +123,100 @@ documents.onDidChangeContent(change => {
   validateTextDocument(change.document);
 });
 
+function countBracesAndParens(text: string): { openBraces: number, closeBraces: number, openParens: number, closeParens: number } {
+  let openBraces = 0, closeBraces = 0, openParens = 0, closeParens = 0;
+  let inString = false;
+  let stringChar = '';
+  let inComment = false;
+  let inMultiLineComment = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1] || '';
+
+    if (inComment) {
+      if (inMultiLineComment) {
+        if (c === '*' && next === '/') {
+          inMultiLineComment = false;
+          inComment = false;
+          i++; // skip /
+        }
+      } else {
+        if (c === '\n') {
+          inComment = false;
+        }
+      }
+      continue;
+    }
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (c === '\\') {
+        escaped = true;
+      } else if (c === stringChar) {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (c === '/' && next === '/') {
+      inComment = true;
+      i++;
+      continue;
+    }
+
+    if (c === '/' && next === '*') {
+      inComment = true;
+      inMultiLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (c === '"' || c === "'") {
+      inString = true;
+      stringChar = c;
+      continue;
+    }
+
+    if (c === '{') openBraces++;
+    else if (c === '}') closeBraces++;
+    else if (c === '(') openParens++;
+    else if (c === ')') closeParens++;
+  }
+
+  return { openBraces, closeBraces, openParens, closeParens };
+}
+
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const text = textDocument.getText();
   const diagnostics: Diagnostic[] = [];
 
   // Basic syntax validation
-  // Check for unmatched braces
-  const openBraces = (text.match(/\{/g) || []).length;
-  const closeBraces = (text.match(/\}/g) || []).length;
+  const counts = countBracesAndParens(text);
   
-  if (openBraces !== closeBraces) {
+  if (counts.openBraces !== counts.closeBraces) {
     const diagnostic: Diagnostic = {
       severity: DiagnosticSeverity.Error,
       range: {
         start: textDocument.positionAt(0),
         end: textDocument.positionAt(text.length)
       },
-      message: `Unmatched braces: ${openBraces} opening, ${closeBraces} closing`,
+      message: `Unmatched braces: ${counts.openBraces} opening, ${counts.closeBraces} closing`,
       source: 'groovy'
     };
     diagnostics.push(diagnostic);
   }
 
-  // Check for unmatched parentheses
-  const openParens = (text.match(/\(/g) || []).length;
-  const closeParens = (text.match(/\)/g) || []).length;
-  
-  if (openParens !== closeParens) {
+  if (counts.openParens !== counts.closeParens) {
     const diagnostic: Diagnostic = {
       severity: DiagnosticSeverity.Error,
       range: {
         start: textDocument.positionAt(0),
         end: textDocument.positionAt(text.length)
       },
-      message: `Unmatched parentheses: ${openParens} opening, ${closeParens} closing`,
+      message: `Unmatched parentheses: ${counts.openParens} opening, ${counts.closeParens} closing`,
       source: 'groovy'
     };
     diagnostics.push(diagnostic);
