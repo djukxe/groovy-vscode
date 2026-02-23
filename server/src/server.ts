@@ -577,7 +577,7 @@ connection.onDefinition((params: DefinitionParams): Definition | null => {
     return null;
   }
 
-  const { symbol, args } = functionCallContext;
+  const { symbol, fullSymbol, args } = functionCallContext;
 
   // First, search for the definition in the current document
   let definition = findDefinitionInDocumentWithSignature(document, text, symbol, args);
@@ -586,11 +586,11 @@ connection.onDefinition((params: DefinitionParams): Definition | null => {
   }
 
   // If not found in current document, search in Jenkins shared library files
-  definition = findDefinitionInJenkinsSharedLibraryWithSignature(symbol, args);
+  definition = findDefinitionInJenkinsSharedLibraryWithSignature(symbol, fullSymbol, args);
   return definition;
 });
 
-function extractFunctionCallContext(text: string, offset: number): { symbol: string, args: string[] } | null {
+function extractFunctionCallContext(text: string, offset: number): { symbol: string, fullSymbol: string, args: string[] } | null {
   // Find the function call that contains the offset
   // Look for patterns like: symbol(args) or obj.symbol(args)
 
@@ -614,7 +614,7 @@ function extractFunctionCallContext(text: string, offset: number): { symbol: str
       // Parse arguments
       const args = parseArguments(argsString);
 
-      return { symbol, args };
+      return { symbol, fullSymbol, args };
     }
   }
 
@@ -751,7 +751,7 @@ function findMethodDefinitionWithSignature(text: string, symbol: string, args: s
   return null;
 }
 
-function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args: string[]): Location | null {
+function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, fullSymbol: string, args: string[]): Location | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
@@ -763,6 +763,26 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
       connection.console.log(`Searching for function ${symbol} with ${args.length} args in vars directory: ${varsDir}`);
       try {
         const files = fs.readdirSync(varsDir);
+        
+        // If fullSymbol contains a dot, it's a qualified call like myUtils.deployTo()
+        // Extract the object/namespace part and prioritize that file
+        const symbolParts = fullSymbol.split('.');
+        const objectName = symbolParts.length > 1 ? symbolParts[0] : null;
+        
+        // First pass: if it's a qualified call, look in the specific file
+        if (objectName) {
+          const targetFile = `${objectName}.groovy`;
+          const targetFilePath = path.join(varsDir, targetFile);
+          if (fs.existsSync(targetFilePath)) {
+            const content = fs.readFileSync(targetFilePath, 'utf8');
+            const location = findFunctionDefinitionWithSignature(targetFilePath, content, symbol, args);
+            if (location) {
+              return location;
+            }
+          }
+        }
+        
+        // Second pass: search all files (for unqualified calls or as fallback)
         for (const file of files) {
           if (file.endsWith('.groovy')) {
             const filePath = path.join(varsDir, file);
@@ -777,8 +797,8 @@ function findDefinitionInJenkinsSharedLibraryWithSignature(symbol: string, args:
               if (location) {
                 return location;
               }
-            } else {
-              // Otherwise, look for a function with the exact symbol name and matching signature
+            } else if (!objectName || fileNameWithoutExt !== objectName) {
+              // Only look for the function if we haven't already checked this file in the first pass
               const location = findFunctionDefinitionWithSignature(filePath, content, symbol, args);
               if (location) {
                 return location;
