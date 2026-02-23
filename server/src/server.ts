@@ -237,7 +237,7 @@ connection.onHover((params: HoverParams): Hover | null => {
   // First, try to extract function call context for signature information
   const functionCallContext = extractFunctionCallContext(text, offset);
   if (functionCallContext) {
-    const { symbol, args } = functionCallContext;
+    const { symbol, fullSymbol, args } = functionCallContext;
 
     // Search for matching function signature
     const signatureCurrentDoc = findFunctionSignatureInDocument(text, symbol, args);
@@ -251,7 +251,7 @@ connection.onHover((params: HoverParams): Hover | null => {
     }
 
     // If no exact signature match, try to find any signature info for the symbol in workspace
-    const signatureWorkspace = findFunctionSignatureInWorkspace(symbol, args);
+    const signatureWorkspace = findFunctionSignatureInWorkspace(symbol, fullSymbol, args);
     if (signatureWorkspace) {
       return {
         contents: {
@@ -352,7 +352,7 @@ function findFunctionSignatureInDocument(text: string, symbol: string, args: str
   return null;
 }
 
-function findFunctionSignatureInWorkspace(symbol: string, args: string[]): string | null {
+function findFunctionSignatureInWorkspace(symbol: string, fullSymbol: string, args: string[]): string | null {
   if (workspaceFolders.length === 0) {
     return null;
   }
@@ -371,6 +371,27 @@ function findFunctionSignatureInWorkspace(symbol: string, args: string[]): strin
     if (fs.existsSync(varsDir)) {
       try {
         const files = fs.readdirSync(varsDir);
+        
+        // If fullSymbol contains a dot, it's a qualified call like myUtils.deployTo()
+        // Extract the object/namespace part and prioritize that file
+        const symbolParts = fullSymbol.split('.');
+        const objectName = symbolParts.length > 1 ? symbolParts[0] : null;
+        
+        // First pass: if it's a qualified call, look in the specific file
+        if (objectName) {
+          const targetFile = `${objectName}.groovy`;
+          const targetFilePath = path.join(varsDir, targetFile);
+          if (fs.existsSync(targetFilePath)) {
+            const content = fs.readFileSync(targetFilePath, 'utf8');
+            const signature = findMethodSignature(content, symbol, args);
+            if (signature) {
+              const doc = extractGroovydocForSymbolInText(content, symbol, args);
+              return formatSignature(signature, doc);
+            }
+          }
+        }
+        
+        // Second pass: search all files (for unqualified calls or as fallback)
         for (const file of files) {
           if (file.endsWith('.groovy')) {
             const filePath = path.join(varsDir, file);
@@ -385,8 +406,8 @@ function findFunctionSignatureInWorkspace(symbol: string, args: string[]): strin
                     const doc = extractGroovydocForSymbolInText(content, 'call', args);
                     return formatSignature(signature, doc);
               }
-            } else {
-              // Otherwise, look for a function with the exact symbol name and matching signature
+            } else if (!objectName || fileNameWithoutExt !== objectName) {
+              // Only look for the function if we haven't already checked this file in the first pass
               const signature = findMethodSignature(content, symbol, args);
               if (signature) {
                     const doc = extractGroovydocForSymbolInText(content, symbol, args);
