@@ -15,8 +15,14 @@ pipeline {
                     myUtils([action: "deploy", target: "prod"])  // Should go to def call(Map config)
 
                     // Test other functions
-                    myUtils.deployTo("staging")  // Should go to deployTo function
-                    myUtils.deployTo("prod", true)  // Should go to overloaded deployTo function
+                    if(!helper.getSupportedEnvironments().contains(env.env)) {
+                         error "Unsupported environment: ${env.env}"
+                    }
+                    if(env.env in ['dev', "test"]) {
+                         myUtils.deployTo("nonprod", true)  // Should go to deployTo function
+                    } else {
+                        myUtils.deployTo("prod")  // Should go to overloaded deployTo function
+                    }
                 }
             }
         }
