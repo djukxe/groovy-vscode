@@ -595,7 +595,7 @@ function extractFunctionCallContext(text: string, offset: number): { symbol: str
   // Look for patterns like: symbol(args) or obj.symbol(args)
 
   // First, try to find a function call ending at or after the offset
-  const functionCallPattern = /(\w+(?:\.\w+)*)\s*\(([^)]*)\)/g;
+  const functionCallPattern = /\b(?!if\b|while\b|for\b|switch\b|catch\b|return\b)(\w+(?:\.\w+)*)\s*\(((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*)\)/g;
   let match;
 
   while ((match = functionCallPattern.exec(text)) !== null) {
