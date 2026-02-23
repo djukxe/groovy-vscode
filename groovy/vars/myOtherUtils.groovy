@@ -14,7 +14,7 @@ def call(Map config) {
 }
 
 /**
- * Deploys the application to the specified environment (myUtils)
+ * Deploys the application to the specified environment (myOtherUtils)
  *
  * @param environment The target environment for deployment (e.g., 'dev', 'staging', 'prod')
  */
@@ -24,7 +24,7 @@ def deployTo(String environment) {
 }
 
 /**
- * Deploys to a specified environment with optional dry-run mode (myUtils)
+ * Deploys to a specified environment with optional dry-run mode (myOtherUtils)
  *
  * @param environment the target environment for deployment
  * @param dryRun if true, simulates deployment without actually deploying;

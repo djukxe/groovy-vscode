@@ -21,7 +21,7 @@ pipeline {
                     if(env.env in ['dev', "test"]) {
                          myUtils.deployTo("nonprod", true)  // Should go to deployTo function
                     } else {
-                        myUtils.deployTo("prod")  // Should go to overloaded deployTo function
+                        myOtherUtils.deployTo("prod")  // Should go to overloaded deployTo function
                     }
                 }
             }
