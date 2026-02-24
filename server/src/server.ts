@@ -180,10 +180,15 @@ function countBracesAndParens(text: string): { openBraces: number, closeBraces: 
       continue;
     }
 
-    if (c === '{') openBraces++;
-    else if (c === '}') closeBraces++;
-    else if (c === '(') openParens++;
-    else if (c === ')') closeParens++;
+    if (c === '{') {
+      openBraces++;
+    } else if (c === '}') {
+      closeBraces++;
+    } else if (c === '(') {
+      openParens++;
+    } else if (c === ')') {
+      closeParens++;
+    }
   }
 
   return { openBraces, closeBraces, openParens, closeParens };
