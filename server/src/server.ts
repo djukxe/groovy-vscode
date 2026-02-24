@@ -129,6 +129,7 @@ function countBracesAndParens(text: string): { openBraces: number, closeBraces: 
   let stringChar = '';
   let inComment = false;
   let inMultiLineComment = false;
+  let inRegex = false;
   let escaped = false;
 
   for (let i = 0; i < text.length; i++) {
@@ -146,6 +147,17 @@ function countBracesAndParens(text: string): { openBraces: number, closeBraces: 
         if (c === '\n') {
           inComment = false;
         }
+      }
+      continue;
+    }
+
+    if (inRegex) {
+      if (escaped) {
+        escaped = false;
+      } else if (c === '\\') {
+        escaped = true;
+      } else if (c === '/') {
+        inRegex = false;
       }
       continue;
     }
@@ -172,6 +184,18 @@ function countBracesAndParens(text: string): { openBraces: number, closeBraces: 
       inMultiLineComment = true;
       i++;
       continue;
+    }
+
+    // Check if this is a regex literal (not division operator)
+    // Regex typically appears after =, ~, (, [, {, :, ;, !, &, |, ?, return, etc.
+    if (c === '/' && !inString && !inComment) {
+      const beforeNonSpace = text.substring(0, i).trimEnd().slice(-1);
+      const isRegexContext = /[=~(\[{:;!&|?]/.test(beforeNonSpace) || 
+                             /\breturn\s*$/.test(text.substring(0, i).trimEnd());
+      if (isRegexContext) {
+        inRegex = true;
+        continue;
+      }
     }
 
     if (c === '"' || c === "'") {
