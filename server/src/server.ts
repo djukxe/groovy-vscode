@@ -28,6 +28,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
+  countBracesAndParens,
   matchesParameterCount,
   parseMethodParameters,
   findMatchingParenthesis,
@@ -122,72 +123,6 @@ connection.onDidChangeConfiguration((change) => {
 documents.onDidChangeContent(change => {
   validateTextDocument(change.document);
 });
-
-function countBracesAndParens(text: string): { openBraces: number, closeBraces: number, openParens: number, closeParens: number } {
-  let openBraces = 0, closeBraces = 0, openParens = 0, closeParens = 0;
-  let inString = false;
-  let stringChar = '';
-  let inComment = false;
-  let inMultiLineComment = false;
-  let escaped = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    const next = text[i + 1] || '';
-
-    if (inComment) {
-      if (inMultiLineComment) {
-        if (c === '*' && next === '/') {
-          inMultiLineComment = false;
-          inComment = false;
-          i++; // skip /
-        }
-      } else {
-        if (c === '\n') {
-          inComment = false;
-        }
-      }
-      continue;
-    }
-
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (c === '\\') {
-        escaped = true;
-      } else if (c === stringChar) {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (c === '/' && next === '/') {
-      inComment = true;
-      i++;
-      continue;
-    }
-
-    if (c === '/' && next === '*') {
-      inComment = true;
-      inMultiLineComment = true;
-      i++;
-      continue;
-    }
-
-    if (c === '"' || c === "'") {
-      inString = true;
-      stringChar = c;
-      continue;
-    }
-
-    if (c === '{') openBraces++;
-    else if (c === '}') closeBraces++;
-    else if (c === '(') openParens++;
-    else if (c === ')') closeParens++;
-  }
-
-  return { openBraces, closeBraces, openParens, closeParens };
-}
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   const text = textDocument.getText();
