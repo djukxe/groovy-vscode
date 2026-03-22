@@ -1,4 +1,4 @@
-import { Position } from 'vscode-languageserver';
+
 
 /**
  * Analyzes function calls at cursor positions for hover and definition features
