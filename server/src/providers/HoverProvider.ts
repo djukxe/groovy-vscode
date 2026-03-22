@@ -1,5 +1,4 @@
 import { Hover, HoverParams } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ServerContext } from '../core/ServerContext';
 import { WorkspaceResolver } from '../core/WorkspaceResolver';
 import { CallContextAnalyzer } from '../utils/CallContextAnalyzer';
