@@ -86,12 +86,17 @@ groovy-vscode
 │   └── syntaxes
 │       └── jenkinsfile.tmLanguage.json
 └── server
+    ├── README.md                    # Detailed server architecture documentation
     └── src
-        ├── server.ts
-        ├── test
-        │   └── languageServer.test.ts
-        └── utils.ts
+        ├── server.ts                # Main language server entry point
+        ├── utils.ts                 # Core utility functions
+        ├── core/                    # Core server infrastructure
+        ├── providers/               # LSP feature providers
+        ├── utils/                   # Specialized utility classes
+        └── test/                    # Test files
 ```
+
+For detailed information about the server architecture, file relationships, and data flow, see [server/README.md](server/README.md).
 
 ### Building
 
