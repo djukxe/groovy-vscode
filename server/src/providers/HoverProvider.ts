@@ -47,12 +47,12 @@ export class HoverProvider {
       }
 
       // If no exact signature match, try to find any signature info for the symbol in workspace
-      const signatureWorkspace = this.workspaceResolver.findMethodSignatureInWorkspace(symbol, fullSymbol, args);
-      if (signatureWorkspace) {
+      const signatureResult = this.workspaceResolver.findMethodSignatureInWorkspace(symbol, fullSymbol, args);
+      if (signatureResult) {
         return {
           contents: {
             kind: 'markdown',
-            value: signatureWorkspace
+            value: this.formatSignature(signatureResult.signature, signatureResult.groovydoc)
           }
         };
       }

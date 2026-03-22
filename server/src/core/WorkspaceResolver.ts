@@ -2,17 +2,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Location, Range, Position } from 'vscode-languageserver';
 import { ServerContext } from './ServerContext';
+import { GroovydocParser } from '../utils/GroovydocParser';
+
+interface SignatureResult {
+  signature: string;
+  groovydoc?: string;
+}
 
 /**
  * Consolidates workspace searching logic for finding symbols and method signatures
  */
 export class WorkspaceResolver {
-  constructor(private context: ServerContext) {}
+  private groovydocParser: GroovydocParser;
+
+  constructor(private context: ServerContext) {
+    this.groovydocParser = new GroovydocParser();
+  }
 
   /**
    * Find method signature in workspace for hover information
    */
-  public findMethodSignatureInWorkspace(symbol: string, fullSymbol: string, args: string[]): string | null {
+  public findMethodSignatureInWorkspace(symbol: string, fullSymbol: string, args: string[]): SignatureResult | null {
     if (this.context.workspaceFolders.length === 0) {
       return null;
     }
@@ -21,9 +31,9 @@ export class WorkspaceResolver {
       // Search in src/ directory for classes and their methods
       const srcDir = path.join(workspaceFolder.uri.replace('file://', ''), this.context.srcPath);
       if (fs.existsSync(srcDir)) {
-        const signature = this.findMethodSignatureInSrc(srcDir, symbol, args);
-        if (signature) {
-          return signature;
+        const result = this.findMethodSignatureInSrc(srcDir, symbol, args);
+        if (result) {
+          return result;
         }
       }
 
@@ -44,9 +54,9 @@ export class WorkspaceResolver {
             const targetFilePath = path.join(varsDir, targetFile);
             if (fs.existsSync(targetFilePath)) {
               const content = fs.readFileSync(targetFilePath, 'utf8');
-              const signature = this.findFunctionSignatureInFile(content, symbol, args);
-              if (signature) {
-                return signature;
+              const result = this.findFunctionSignatureInFile(content, symbol, args);
+              if (result) {
+                return result;
               }
             }
           }
@@ -56,9 +66,9 @@ export class WorkspaceResolver {
             if (file.endsWith('.groovy')) {
               const filePath = path.join(varsDir, file);
               const content = fs.readFileSync(filePath, 'utf8');
-              const signature = this.findFunctionSignatureInFile(content, symbol, args);
-              if (signature) {
-                return signature;
+              const result = this.findFunctionSignatureInFile(content, symbol, args);
+              if (result) {
+                return result;
               }
             }
           }
@@ -138,9 +148,9 @@ export class WorkspaceResolver {
   /**
    * Find method signature in src directory
    */
-  private findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): string | null {
+  private findMethodSignatureInSrc(srcDir: string, symbol: string, args: string[]): SignatureResult | null {
     const self = this;
-    function searchDirectory(dir: string): string | null {
+    function searchDirectory(dir: string): SignatureResult | null {
       try {
         const items = fs.readdirSync(dir);
         for (const item of items) {
@@ -154,9 +164,9 @@ export class WorkspaceResolver {
             }
           } else if (item.endsWith('.groovy')) {
             const content = fs.readFileSync(itemPath, 'utf8');
-            const signature = self.findFunctionSignatureInFile(content, symbol, args);
-            if (signature) {
-              return signature;
+            const result = self.findFunctionSignatureInFile(content, symbol, args);
+            if (result) {
+              return result;
             }
           }
         }
@@ -172,7 +182,7 @@ export class WorkspaceResolver {
   /**
    * Find function signature in a single file
    */
-  private findFunctionSignatureInFile(content: string, symbol: string, args: string[]): string | null {
+  private findFunctionSignatureInFile(content: string, symbol: string, args: string[]): SignatureResult | null {
     const functionPatterns = [
       // Standard function definition with def
       new RegExp(`(?:^|\\n)\\s*(?:def\\s+)?${symbol}\\s*\\(`, 'g'),
@@ -194,7 +204,11 @@ export class WorkspaceResolver {
           if (this.matchesParameterCount(expectedParams, args.length)) {
             // Found a matching signature
             const signature = content.substring(match.index, paramEnd + 1).trim();
-            return signature;
+            
+            // Extract groovydoc for this symbol
+            const groovydoc = this.groovydocParser.extractGroovydocForSymbolInText(content, symbol, args);
+            
+            return { signature, groovydoc };
           }
         }
       }

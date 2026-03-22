@@ -36,14 +36,17 @@ export class DefinitionProvider {
 
     const { symbol, fullSymbol, args } = functionCallContext;
 
+    // For Jenkins shared library unqualified calls (e.g., myUtils()), look for 'call' method
+    const searchSymbol = fullSymbol.includes('.') ? symbol : 'call';
+
     // First, search for the definition in the current document
-    let definition = this.findDefinitionInDocumentWithSignature(document, text, symbol, args);
+    let definition = this.findDefinitionInDocumentWithSignature(document, text, searchSymbol, args);
     if (definition) {
       return definition;
     }
 
     // If not found in current document, search in Jenkins shared library files
-    definition = this.workspaceResolver.findDefinitionInJenkinsSharedLibrary(symbol, fullSymbol, args);
+    definition = this.workspaceResolver.findDefinitionInJenkinsSharedLibrary(searchSymbol, fullSymbol, args);
     return definition;
   }
 
