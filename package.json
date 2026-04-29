@@ -119,7 +119,7 @@
     "jest": "^30.2.0",
     "jscpd": "^4.0.5",
     "ts-jest": "^29.4.6",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.0",
     "typescript-eslint": "^8.52.0"
   },
   "engines": {
