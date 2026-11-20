@@ -111,11 +111,11 @@
     "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.0",
     "@types/vscode": "^1.107.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "jest": "^30.2.0",
     "jscpd": "^4.0.5",
     "ts-jest": "^29.4.6",
