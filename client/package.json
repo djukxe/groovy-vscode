@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "publisher": "JulienTAHON",
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^12.0.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.19.4",
     "@types/vscode": "^1.107.0",
-    "typescript": "^5.3.0"
+    "typescript": "^6.0.3"
   }
 }
