@@ -12,3 +12,5 @@ vscodeignore
 softprops
 JSONLINT
 Groovydoc
+zizmor
+artipacked
