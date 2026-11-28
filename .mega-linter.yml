@@ -13,3 +13,7 @@ DISABLE_LINTERS:
 SHOW_ELAPSED_TIME: true
 
 FLAVOR_SUGGESTIONS: false
+
+# Let zizmor query the GitHub API (needed by its ref-confusion audit)
+ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
+  - GITHUB_TOKEN
