@@ -1,6 +1,11 @@
-import { defineConfig } from "eslint/config";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
+import { createRequire } from "node:module";
+
+// Load plugins through CommonJS resolution so NODE_PATH is honored when
+// ESLint runs from MegaLinter's bundled install (native ESM ignores it).
+const require = createRequire(import.meta.url);
+const { defineConfig } = require("eslint/config");
+const typescriptEslint = require("@typescript-eslint/eslint-plugin");
+const tsParser = require("@typescript-eslint/parser");
 
 export default defineConfig([{
     files: ["**/*.ts"],
